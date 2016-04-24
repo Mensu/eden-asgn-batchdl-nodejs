@@ -26,6 +26,7 @@ function jQexec(body, cb) {
 		done: cb
 	});
 }
+
 function FetchOne(Id, showId, Title, username) {
 	if (Title.length) console.log("Fetching Assignment", Id, Title, "....");
 	else console.log("Fetching Assignment", Id, "....");
@@ -56,6 +57,7 @@ function FetchOne(Id, showId, Title, username) {
 			  // otherwise blockTag would be "" => case 4
 
 			  // case 4: there are no code files in this page. just return
+			  // it would be better to encapsulate this section as an exception
 			if (!hardDue && !yourAnswer) {
 				console.log("\nError: No code files exist. (the assignment id is " + Id + ")");
 				console.log("  *** It is suggested that you check out whether the assignment actually exists or is in plagiarism pending.");
@@ -65,9 +67,9 @@ function FetchOne(Id, showId, Title, username) {
 			if (~optionalTag.indexOf('Optional')) folder += ("[optional] ");
 
 			  // set folder's name
-			if (showId) folder += sanitize(Id) + ' ';
-			folder += sanitize(Title);
+			folder += sanitize(Id) + ' ' + sanitize(Title);
 
+			var savePath = "./saved/" + username + "/" + folder + "/";
 			  // deal with the first "block"
 			    // array of all filenames(in label <a>): $('#tab-nondiv-container .tab a')
 			$('#tab-nondiv-container .tab a').each(function() {
@@ -81,7 +83,7 @@ function FetchOne(Id, showId, Title, username) {
 					  // if the block contains the standard answer
 					if (hardDue) {
 						filter = " pre";
-						subfolder = "/Standard Answer/"
+						subfolder = "Standard Answer/"
 					} else {  // if the block contains your answer
 						filter = " textarea";
 					}
@@ -89,12 +91,12 @@ function FetchOne(Id, showId, Title, username) {
 					filename = sanitize(w.replace('[*]', ''));
 				} else {
 					  // if the block contains the standard answer
-					if (hardDue) subfolder = "/Standard Answer/";
+					if (hardDue) subfolder = "Standard Answer/";
 					filter = " pre";
 					filename = sanitize(w);
 				}
 				code += $($(this).attr('href') + filter).text();
-				writeFile("./saved/" + username + "/" + folder + "/" + subfolder + filename, code);
+				writeFile(savePath + subfolder + filename, code);
 				//devFile += util.format("[Unit%d]\nFileName=%s\n", ++i, filename);
 			});
 
@@ -102,36 +104,111 @@ function FetchOne(Id, showId, Title, username) {
 			  // if the second block exists 
 			if ($('#tab-nondiv-containers').length == 1) {
 				$('#tab-nondiv-containers .tab a').each(function() {
-					var filename = "", code = "", subfolder = "/Standard Answer/";
+					var filename = "", code = "", subfolder = "Standard Answer/";
 					w = $(this).text();
 					if (~w.indexOf("cpp")) isCpp = 1;
 					if (~w.indexOf('[*]')) filename = sanitize(w.replace('[*]', '')), code += "// To Be Finished\n";
 					else filename = sanitize(w);
 					code += $($(this).attr('href') + " pre").text();
-					writeFile("./saved/" + username + "/" + folder + "/" + subfolder + filename, code);
+					writeFile(savePath + subfolder + filename, code);
 					//devFile += util.format("[Unit%d]\nFileName=%s\n", ++i, filename);
 			    });
 			}
 
-			  // when hard due passes, fetch the last submit, if any
-			if (hardDue && $('.dataTable a').length) {
-				var lastSubmit = 'http://eden.sysu.edu.cn' + $('.dataTable a').first().attr('href');
-				request.get(lastSubmit, function(e, r, body) {
+			  // when hard due passes, fetch the latest submission, if any
+			if (hardDue && $('.ass .dataTable a').length) {
+				  // get the address of last submission before fetching the webpage
+				var latestSubmissionURL = 'http://eden.sysu.edu.cn' + $('.ass .dataTable a').first().attr('href');
+				request.get(latestSubmissionURL, function(e, r, body) {
 					jQexec(body, function(err, window) {
 						var $ = window.$;
 						$('#tab-nondiv-container .tab a').each(function() {
-							var filename = "", code = "", subfolder = "";
+							var filename = "", code = "";
 							var w = $(this).text();
 							if (~w.indexOf("cpp")) isCpp = 1;
 							if (~w.indexOf('[*]')) filename = sanitize(w.replace('[*]', '')), code += "// To Be Finished\n";
 							else filename = sanitize(w);
 							code += $($(this).attr('href') + " pre").text();
-							writeFile("./saved/" + username + "/" + folder + "/" + subfolder + filename, code);
+							writeFile(savePath + filename, code);
 							//devFile += util.format("[Unit%d]\nFileName=%s\n", ++i, filename);
 						});
 					});
 				});
 			}
+
+			  // fetch Description, Hint and Latest Submission Output
+			var descriptionText = "", descriptionFilename = "Description && Hint.txt";
+			  // index = 0 => Description
+			          // 1 => Hint
+			          // 2 => Latest Submission Output (if existing)
+			$('.ass > .panel').each(function(index) {
+				  // deal with Description and Hint
+				if (index < 2) {
+					if (index == 0) descriptionText += ">>>>>>>>>>>>>>>> Description <<<<<<<<<<<<<<<<\n\n";
+					if (index == 1) descriptionText += "\n\n>>>>>>>>>>>>>>>>>>> Hint <<<<<<<<<<<<<<<<<<<<\n\n";
+					  // attempt to keep the format unchanged
+					  // imperfect
+					$("br").replaceWith("\n"), $("p").append("\n");
+
+					descriptionText += $(this).text();
+				}
+				  // deal with Lastest Submission Output, if any
+				    // index = 2, if hard due hasn't passed
+				    // index = 5, if hard due has passed
+				if (index == (2 + 3 * hardDue)) {
+					var latestSubmissionOutputFilename = "Latest Graded Submission Output.txt",
+						latestSubmissionURL = 'x', output = '';
+					  
+					  // if there exists graded submission with grade > 0
+					    // if so, check whether its output is in the current page:
+					    	// if so, just fetch its output in the currect page
+					    	  // => case 1
+
+					    	// else, get and visit its address to fetch its output
+					    	  // => case 2
+					    	  
+					    // else, do nothing => case 3
+					$('.ass .dataTable td').each(function(index2) {
+						if (index2 > 3 && index2 % 3 == 1) {
+							var latestGrade = $(this).text();
+							  // case 2
+							if (latestGrade == '  - ' || latestGrade == '  0 ') {
+								index2 += 3;
+							}
+							else {  // grade which is > 0 found
+								  // case 1
+								if (index2 == 4) latestSubmissionURL = "";
+								  // case 2
+								else latestSubmissionURL = 'http://eden.sysu.edu.cn' + $(this).prev().children().attr('href');
+								  
+								  // break the 'each' loop
+								return false;
+							}
+							  // not found: continue the 'each' loop
+							return true;
+						}
+					});
+
+					  // case 1
+					if (latestSubmissionURL.length == 0) {
+						output = $(this).text().replace(/    \|/g, '');
+						if (output.length) writeFile(savePath + latestSubmissionOutputFilename, output);
+					} else if (latestSubmissionURL.length > 1) {  // case 2
+						request.get(latestSubmissionURL, function(e, r, body) {
+							jQexec(body, function(err, window) {
+								var $ = window.$;
+								output = $('#submission-content .panel').text().replace(/    \|/g, '');
+								writeFile(savePath + latestSubmissionOutputFilename, output);
+							});
+						});
+					} else;  // case 3
+
+					  // break the 'each' loop
+					return false;
+				}
+			});
+			writeFile("./saved/" + username + "/" + folder + "/" + descriptionFilename, descriptionText);
+			
 			console.log(".... Assignment", Id, "Downloaded Successfully");
 			//devFile = util.format("[Project]\nFileName=Project%s.dev\nName=%s\n\
 				//UnitCount=%s\nIsCpp=%d\nType=1\nVer=2\n",
@@ -164,7 +241,7 @@ function doFetch(id, username) {
 function PromptLogin(csrf) {
 	prompt.start();
 	  // welcome
-	console.log("\nPlease input the assignment id(opitional), username and password respectively.");
+	console.log("\nPlease input the assignment id(optional), username and password respectively.");
 	console.log("  *** Note: the assignment id should be a [four-digit] number");
 	console.log("  *** If not, your unfinished assignments will be fetched instead, \n"
 		+ "  *** which means that when required to input the assignment id you may\n"

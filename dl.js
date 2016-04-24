@@ -27,7 +27,7 @@ function jQexec(body, cb) {
 	});
 }
 
-function FetchOne(Id, showId, Title, username) {
+function FetchOne(Id, finished, Title, username) {
 	if (Title.length) console.log("Fetching Assignment", Id, Title, "....");
 	else console.log("Fetching Assignment", Id, "....");
 	request.get('http://eden.sysu.edu.cn/m/ass/' + Id, function(e, r, body) {
@@ -67,6 +67,7 @@ function FetchOne(Id, showId, Title, username) {
 			if (~optionalTag.indexOf('Optional')) folder += ("[optional] ");
 
 			  // set folder's name
+			if (!finished) folder += "[unfinished] ";
 			folder += sanitize(Id) + ' ' + sanitize(Title);
 
 			var savePath = "./saved/" + username + "/" + folder + "/";
@@ -137,7 +138,7 @@ function FetchOne(Id, showId, Title, username) {
 			}
 
 			  // fetch Description, Hint and Latest Submission Output
-			var descriptionText = "", descriptionFilename = "Description && Hint.txt";
+			var descriptionText = "", descriptionFilename = "Description & Hint.txt";
 			  // index = 0 => Description
 			          // 1 => Hint
 			          // 2 => Latest Submission Output (if existing)
@@ -241,13 +242,13 @@ function doFetch(id, username) {
 function PromptLogin(csrf) {
 	prompt.start();
 	  // welcome
-	console.log("\nPlease input the assignment id(optional), username and password respectively.");
+	console.log("\nPlease input assignment id [allowed pressing Enter to skip], username & password.");
 	console.log("  *** Note: the assignment id should be a [four-digit] number");
 	console.log("  *** If not, your unfinished assignments will be fetched instead, \n"
 		+ "  *** which means that when required to input the assignment id you may\n"
-	    + "  *** [simply press Enter] to skip so as to fetch your unfinished assignments");
+	    + "  *** simply press Enter to skip so as to fetch your unfinished assignments");
 	  // input id, username and password
-	prompt.get(['id', 'username', {
+	prompt.get(['assignment_id', 'username', {
 		name: 'password',
 		hidden: true,
 		replace: '*',
@@ -274,7 +275,7 @@ function PromptLogin(csrf) {
 					return PromptLogin(csrf);
 				} else {
 					console.log("logged in!");
-					doFetch(result.id, result.username);
+					doFetch(result.assignment_id, result.username);
 				}
 			});
 		})
@@ -282,6 +283,7 @@ function PromptLogin(csrf) {
 }
 
 request('http://eden.sysu.edu.cn/m/login/', function(e, r, body) {
+	if (e) return onErr(e);
 	jQexec(body, function(err, window) {
 		var $ = window.$;
 		var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();

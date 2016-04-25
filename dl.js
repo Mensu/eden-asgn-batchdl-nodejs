@@ -49,7 +49,7 @@ function FetchOne(Id, finished, Title, username) {
 			  	// 2. (before hard due) your answer + standard answer
 			  	// 3. (hard due passed) standard answer
 			  	// 4. no blocks
-			  // so I use blockTag (by checking whether it contains "hard due")
+			  // so I use (first block's) blockTag (by checking whether it contains "hard due")
 			  // to distinguish whether the first block is "your answer"(no) or "standard answer"(yes)
 			var blockTag = $('#tab-nondiv-container').prev().prev().text();
 			var hardDue = false, yourAnswer = false;
@@ -89,17 +89,17 @@ function FetchOne(Id, finished, Title, username) {
 
 				if (~w.indexOf("cpp")) isCpp = 1;
 				if (~w.indexOf('[*]')) {
-					  // if the block contains the standard answer
+					  // if the first block contains the standard answer
 					if (hardDue) {
 						filter = " pre";
 						subfolder = "Standard Answer/"
-					} else {  // if the block contains your answer
+					} else {  // if the first block contains your answer
 						filter = " textarea";
 					}
 					code += "// To Be Finished\n";
 					filename = sanitize(w.replace('[*]', ''));
 				} else {
-					  // if the block contains the standard answer
+					  // if the first block contains the standard answer
 					if (hardDue) subfolder = "Standard Answer/";
 					filter = " pre";
 					filename = sanitize(w);
@@ -110,7 +110,7 @@ function FetchOne(Id, finished, Title, username) {
 			});
 
 			  // deal with the second block when there are both my answer block and std answer block
-			  // if the second block exists 
+			  // if the second block exists (=> it must be the standard answer)
 			if ($('#tab-nondiv-containers').length == 1) {
 				$('#tab-nondiv-containers .tab a').each(function() {
 					var filename = "", code = "", subfolder = "Standard Answer/";

@@ -75,7 +75,7 @@ function FetchOne(Id, finished, Title, username) {
 			if (~optionalTag.indexOf('Optional')) folder += ("[optional] ");
 
 			  // set folder's name
-			if (!finished) folder += "[*] ";
+			if (!finished) folder += "[unfinished] ";
 			folder += sanitize(Id) + ' ' + sanitize(Title);
 
 			var savePath = "./saved/" + username + "/" + folder + "/";

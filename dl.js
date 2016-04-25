@@ -1,3 +1,5 @@
+var windows = false;
+
 var sanitize = require("sanitize-filename");
 var request = require('request');
 var mkdirp = require('mkdirp');
@@ -15,6 +17,7 @@ var request = request.defaults({
 function writeFile(path, contents, cb) {
 	mkdirp(getDirName(path), function(err) {
 		if (err) return cb(err);
+		if (windows) contents = contents.replace(/\n/g, '\r\n');
 		fs.writeFile(path, contents, cb);
 	});
 }
@@ -26,11 +29,16 @@ function jQexec(body, cb) {
 		done: cb
 	});
 }
-
+function connectionFailed(err) {
+	console.log("\nConnectionError: Failed to connect to eden, please try again later:(");
+	console.log("  *** Lack of access to internet or Dr. Wang being updating codes may cause this problem. ");
+	throw err;
+}
 function FetchOne(Id, finished, Title, username) {
 	if (Title.length) console.log("Fetching Assignment", Id, Title, "....");
 	else console.log("Fetching Assignment", Id, "....");
 	request.get('http://eden.sysu.edu.cn/m/ass/' + Id, function(e, r, body) {
+		if (e) connectionFailed(e);
 		jQexec(body, function(err, window) {
 			var $ = window.$, Title = $('.ass h1').first().text().replace(/^\s+/, '').replace(/\s+$/, '');
 			var folder = "", devFile = "", isCpp = 0, i = 0;
@@ -67,7 +75,7 @@ function FetchOne(Id, finished, Title, username) {
 			if (~optionalTag.indexOf('Optional')) folder += ("[optional] ");
 
 			  // set folder's name
-			if (!finished) folder += "[unfinished] ";
+			if (!finished) folder += "[*] ";
 			folder += sanitize(Id) + ' ' + sanitize(Title);
 
 			var savePath = "./saved/" + username + "/" + folder + "/";
@@ -121,6 +129,7 @@ function FetchOne(Id, finished, Title, username) {
 				  // get the address of last submission before fetching the webpage
 				var latestSubmissionURL = 'http://eden.sysu.edu.cn' + $('.ass .dataTable a').first().attr('href');
 				request.get(latestSubmissionURL, function(e, r, body) {
+					if (e) connectionFailed(e);
 					jQexec(body, function(err, window) {
 						var $ = window.$;
 						$('#tab-nondiv-container .tab a').each(function() {
@@ -196,6 +205,7 @@ function FetchOne(Id, finished, Title, username) {
 						if (output.length) writeFile(savePath + latestSubmissionOutputFilename, output);
 					} else if (latestSubmissionURL.length > 1) {  // case 2
 						request.get(latestSubmissionURL, function(e, r, body) {
+							if (e) connectionFailed(e);
 							jQexec(body, function(err, window) {
 								var $ = window.$;
 								output = $('#submission-content .panel').text().replace(/    \|/g, '');
@@ -220,6 +230,7 @@ function FetchOne(Id, finished, Title, username) {
 }
 function doFetch(id, username) {
 	request.get('http://eden.sysu.edu.cn/m/ass/', function(e, r, body) {
+		if (e) connectionFailed(e);
 		jQexec(body, function(err, window) {
 			  // if id is valid
 			if (id.replace(/[^0-9]/g, '').length == 4 && id.length == 4) {
@@ -257,7 +268,7 @@ function PromptLogin(csrf) {
 		if (err) {
 			return onErr(err);
 		}
-		console.log("logging in....");
+		console.log("Logging in....");
 		request.post({
 			url: 'http://eden.sysu.edu.cn/m/login/',
 			form: {
@@ -271,10 +282,10 @@ function PromptLogin(csrf) {
 				var $ = window.$;
 				if ($('.errorlist').length) {
 					console.log($('.errorlist').text());
-					console.log("login failed, please retry :(");
+					console.log("Login failed, please retry :(");
 					return PromptLogin(csrf);
 				} else {
-					console.log("logged in!");
+					console.log("Logged in!");
 					doFetch(result.assignment_id, result.username);
 				}
 			});
@@ -283,10 +294,12 @@ function PromptLogin(csrf) {
 }
 
 request('http://eden.sysu.edu.cn/m/login/', function(e, r, body) {
-	if (e) return onErr(e);
+	if (e) connectionFailed(e);
 	jQexec(body, function(err, window) {
 		var $ = window.$;
 		var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
 		PromptLogin(csrf);
 	});
 });
+
+

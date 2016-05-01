@@ -1,7 +1,7 @@
 # Thanks To
 
-- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes){:target="_blank"} who inspired me as well to have a try on this kind of work
-- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs){:target="_blank"} who has laid a solid foundation for my later development and from whom this repository is forked
+- <a href="https://github.com/DaddyTrap/eden_clone_codes" target="_blank">``DaddyTrap``</a> who inspired me as well to have a try on this kind of work
+- <a href="https://github.com/iebb/eden-asgn-batchdl-nodejs" target="_blank">``ieb``</a> who has laid a solid foundation for my later development and from whom this repository is forked
 
 # New Features
  - **auto mode**: fetch your unfinished assignments automatically without inputting username and password
@@ -21,16 +21,16 @@
 
 There are some precompiled binaries (using ``enclose``):
 
-[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe){:target="_blank"}
+<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe" target="_blank">``Windows-32bit``</a>
 ``19.9 MB``
 
-[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe){:target="_blank"}
+<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe" target="_blank">``Windows-64bit``</a>
 ``25.2 MB``
 
-[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64){:target="_blank"}
+<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64" target="_blank">``Mac-64bit``</a>
 ``29.5 MB``
 
-[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64){:target="_blank"}
+<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64" target="_blank">``Ubuntu-64bit``</a>
 ``31.3 MB``
 
 You only need to execute it.
@@ -65,7 +65,7 @@ save it as run.sh and have it run on terminal (double click to run is possible a
 
 # Run with source
 
-[``node.js``](https://nodejs.org/en/ "Node.js") is required.
+<a href="https://nodejs.org/en/" target="_blank">``node.js``</a> is required.
 
 ```
 node dl.js
@@ -73,7 +73,7 @@ node dl.js
 
 ## Install node.js on Windows
 
-[``download nodejs v5.10.1 for windows``](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x64.msi)
+<a href="https://nodejs.org/dist/v5.10.1/node-v5.10.1-x64.msi" target="_blank">``download nodejs v5.10.1 for windows``</a>
 
 ## Install node.js on Linux
 

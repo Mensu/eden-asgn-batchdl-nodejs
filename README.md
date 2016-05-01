@@ -1,7 +1,7 @@
 # Thanks To
 
-- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes) who inspired me as well to have a try on this kind of work
-- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs) who has laid a solid foundation for my later development and from whom this repository is forked
+- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes){:target="_blank"} who inspired me as well to have a try on this kind of work
+- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs){:target="_blank"} who has laid a solid foundation for my later development and from whom this repository is forked
 
 # New Features
  - **auto mode**: fetch your unfinished assignments automatically without inputting username and password
@@ -21,16 +21,16 @@
 
 There are some precompiled binaries (using ``enclose``):
 
-[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe)
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe){:target="_blank"}
 ``19.9 MB``
 
-[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe)
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe){:target="_blank"}
 ``25.2 MB``
 
-[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64)
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64){:target="_blank"}
 ``29.5 MB``
 
-[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64)
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64){:target="_blank"}
 ``31.3 MB``
 
 You only need to execute it.

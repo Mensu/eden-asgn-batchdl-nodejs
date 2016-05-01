@@ -1,6 +1,6 @@
 # Thanks To
 
-- <a href="https://github.com/DaddyTrap/eden_clone_codes" target="_blank">``DaddyTrap``</a> who inspired me as well to have a try on this kind of work
+- <a href="https://github.com/DaddyTrap/eden_clone_codes" target="_blank">DaddyTrap</a> who inspired me as well to have a try on this kind of work
 - <a href="https://github.com/iebb/eden-asgn-batchdl-nodejs" target="_blank">``ieb``</a> who has laid a solid foundation for my later development and from whom this repository is forked
 
 # New Features

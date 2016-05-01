@@ -1,7 +1,7 @@
 # Thanks To
 
-- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes), who inspired me as well to have a try on this kind of work
-- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs), from whom this repository is forked
+- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes) who inspired me as well to have a try on this kind of work
+- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs) who has laid a solid foundation for my later development and from whom this repository is forked
 
 # New Features
  - **auto mode**: fetch your unfinished assignments automatically without inputting username and password
@@ -89,7 +89,7 @@ sudo apt-get install nodejs
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
 5. If there are any submissions whose grades are positive or None, **the latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
-6. auto mode = login with the **first** account stored locally + fetch **unfinished** assignments + download standard answer binaries **on Win32 and Ubuntu64**
+6. auto mode = login with the **first** account stored locally + fetch **unfinished** assignments + download standard answer binaries **on Win32 and Linux64**
 7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json. You may open it with an editor and it should be easy to understand. To reset, just remove that file.
 
 -------

@@ -1,12 +1,13 @@
 # Thanks To
 
-- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes), who inspired me to have a try at this project
+- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes), who inspired me as well to have a try on this kind of work
 - [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs), from whom this repository is forked
 
-# Main Features
-
-- Download **unfinished** assignments (basis)
-- Download assignments by **id**
+# New Features
+ - **auto mode**: fetch your unfinished assignments automatically without inputting username and password
+ - **store your username and password** locally
+ - **multiple ids input** supported
+ - download **standard answer binaries**
 
 # Downloaded Contents
 
@@ -20,17 +21,17 @@
 
 There are some precompiled binaries (using ``enclose``):
 
-[``windows-32bit``](https://github.com/iebb/eden-asgn-batchdl-nodejs/releases/download/v0.16.4.21/downloader-win32.exe)
-``19.7 MiB``
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Win32.exe)
+``19.9 MB``
 
-[``windows-64bit``](https://github.com/iebb/eden-asgn-batchdl-nodejs/releases/download/v0.16.4.21/downloader-win64.exe)
-``24.9 MiB``
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Win64.exe)
+``25.2 MB``
 
-[``Mac-64bit``](https://github.com/iebb/eden-asgn-batchdl-nodejs/releases/download/v0.16.4.21/downloader-ubuntu64)
-``31.9 MiB``
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Mac64)
+``29.5 MB``
 
-[``Linux-64bit``](https://github.com/iebb/eden-asgn-batchdl-nodejs/releases/download/v0.16.4.21/downloader-ubuntu64)
-``31.9 MiB``
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Ubuntu64)
+``31.3 MB``
 
 You only need to execute it.
 
@@ -54,11 +55,11 @@ cd "/Users/$USER/Downloads"
 ```
 save it as run.sh and have it run on terminal (double click to run is possible as well)  
 
-- on Linux ( suppose the downloader is located in /home/$USER/Downloads/ )  
+- on Ubuntu ( suppose the downloader is located in /home/$USER/Downloads/ )  
 Create a .sh file containing
 ```
 cd "/home/$USER/Downloads"
-gnome-terminal -x bash -c "./Downloader-Linux64; printf 'Please press Enter to continue'; read"
+gnome-terminal -x bash -c "./Downloader-Ubuntu64; printf 'Please press Enter to continue'; read"
 ```
 save it as run.sh and have it run on terminal (double click to run is possible as well)  
 
@@ -88,11 +89,12 @@ sudo apt-get install nodejs
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
 5. If there are any submissions whose grades are positive or None, **the latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
-
+6. auto mode = login with the **first** account stored locally + fetch **unfinished** assignments + download standard answer binaries **on Win32 and Ubuntu64**
+7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json. You may open it with an editor and it should be easy to understand. To reset, just remove that file.
 
 -------
 
-------
+-------
 
 # the original README file
 

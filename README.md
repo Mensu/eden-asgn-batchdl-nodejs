@@ -21,16 +21,16 @@
 
 There are some precompiled binaries (using ``enclose``):
 
-[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Win32.exe)
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe)
 ``19.9 MB``
 
-[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Win64.exe)
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe)
 ``25.2 MB``
 
-[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Mac64)
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64)
 ``29.5 MB``
 
-[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3.0-alpha/Downloader-Ubuntu64)
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64)
 ``31.3 MB``
 
 You only need to execute it.

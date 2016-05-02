@@ -47,10 +47,11 @@ may cause this problem. ");
 
 function encloseJSWarning() {
   if (ByEncloseJS) console.log('\n*** WARNING: the executable is compiled by EncloseJS Evaluation version with \
-considerable limitation on process working time. Some assignments and binaries are likely to \
-fail to be downloaded completely due to this limitation if too many assignments are required \
+considerable limitations on process working time. Some assignments and binaries are likely to \
+fail to be downloaded completely due to these limitations if too many assignments are required \
 at a time. In this case we suggest you download the source code and run it on nodejs. \
-You might want to check out the README file on GitHub for more information.\n');
+You might want to check out the README file on our GitHub (https://github.com/Men\
+su/eden-asgn-batchdl-nodejs) for more information.\n');
 }
 
 function downloadFile(url, dest, callback) {
@@ -248,11 +249,13 @@ function downloadStandardAnswerBinaries(Id, savePath, callback) {
   var subfolder = 'Standard Answer Binaries/', filename = 'a.out';
   downloadFile(edenPrefix + 'linux64/' + Id, savePath + subfolder + 'linux64-'
                 + filename, function() {
-    downloadFile(edenPrefix + 'win32/' + Id, savePath + subfolder + 'win32-'
+    downloadFile(edenPrefix + 'win64/' + Id, savePath + subfolder + 'win64-'
                   + filename, function() {
-      if (globalAutomode) return callback(); 
-      else downloadFile(edenPrefix + 'win64/' + Id, savePath + subfolder
-                        + 'win64-' + filename, function() {
+      if (globalAutomode)
+        return callback();
+      else
+        downloadFile(edenPrefix + 'win32/' + Id, savePath + subfolder
+                      + 'win32-' + filename, function() {
         // seems that linux 32bit compiler on eden has been out of work
         //downloadFile(edenPrefix + 'linux32/' + Id, savePath + subfolder + 'linux64-' + filename, function() {callback();});
         callback();
@@ -347,7 +350,7 @@ function fetchUnfinished(username) {
     if (e) connectionFailed(e);
     jQexec(body, function(err, window) {
         var $ = window.$;
-        if (ByEncloseJS && $('.item-ass a').length > 6) encloseJSWarning();
+        if ($('.item-ass a').length > 6) encloseJSWarning();
         $('.item-ass a').each(function() {
             // sanitize id and title
           Id = $(this).attr('href').replace(/[^0-9]/g, '');
@@ -437,12 +440,12 @@ function getAssignmentsId(username) {
     return fetchUnfinished(username);
   }
   prompt.start();
-  console.log("Please input the assignments' ids here");
+  console.log("Please input the assignment id");
   console.log('or [simply press Enter] to fetch unfinished assignments');
-  console.log('  *** Note: an assignment id should be a [four-digit] number like 6910');
+  console.log('  *** Note: a valid assignment id is a [four-digit] number like 6910');
   console.log('  *** multiple ids are allowed like 6910 6911 6912, with ids separated by spaces');
   console.log('  *** you may also input a "u" as an id to fetch unfinished assignments,');
-  console.log('  *** like 6910 u 2035    => 6910, unfinished ones, 2035 will be fetched');
+  console.log('  *** like 6910 u 2035    => 6910, unfinished ones and 2035 will be fetched');
   prompt.get([{
     name: 'id',
     type: 'string',
@@ -451,14 +454,12 @@ function getAssignmentsId(username) {
     if (err) throw err;
     var fetched = false;  // flag for unfinished assignments
     var rawId = result.id, count = 0;
-
       // simply press Enter => fetch unfinished assignments
     if (rawId.length == 1 && rawId[0] == '') {
       fetched = true;
       console.log('Ready to fetch unfinished assignments.');
       return fetchUnfinished(username);
     }
-
     for (i in rawId) {
       var oneId = rawId[i];
       if (!fetched && oneId.match(/^u$/)) {
@@ -469,12 +470,17 @@ function getAssignmentsId(username) {
       } else if (oneId.match(/^(\d){4}$/)) {
           // id is valid => fetch the desired assignment
         ++count;
-        if (ByEncloseJS && count == 3) encloseJSWarning();
+        if (count == 4) encloseJSWarning();
         console.log('Ready to fetch the desired assignments (id = ' + oneId + ')');
         FetchOne(oneId, true, "", username);
-      } else if (oneId != ' ') {  // else => ignore
+      } else if (oneId != '') {  // else => ignore
         console.log('invalid id "' + oneId + '" ignored');
       }
+    }
+      // no valid id input
+    if (count == 0 && !fetched) {
+      console.log('Bad input! Please try again...');
+      getAssignmentsId(username);
     }
   });
 }
@@ -593,20 +599,20 @@ function chooseAccount(csrf, usersData) {
 
 function chooseAutomode(callback) {
   prompt.start();
-  console.log('Would you like to access the auto mode?');
-  console.log('  *** In auto mode, we will use the first account stored at local to \
-fetch the unfinished assignments and download binaries executable on Win32 and Linux64');
+  console.log('Would you like to access auto mode? [simply press Enter] to access!');
+  console.log('  *** In auto mode, we will use the first account stored locally to \
+fetch the unfinished assignments and download binaries executable on Win64 and Linux64');
   prompt.get([{
     name: 'automode',
     description: '[y/n]'
   }], function(err, result) {
     if (err) throw err;
-    if (result.automode == 'y' || result.automode == 'Y' || result.automode == 'yes'
+    if (result.automode == '' || result.automode == 'y' || result.automode == 'Y' || result.automode == 'yes'
         || result.automode == 'Yes' || result.automode == 'YES') {
       console.log('Auto mode started!');
       return callback(undefined, true);
   } else {
-    console.log('Access usual mode');
+    console.log('Access usual mode.');
     return callback(undefined, false);
   }
   });
@@ -617,7 +623,7 @@ function chooseDownloadBinaries(callback) {
   prompt.start();
   console.log('Would you like to download standard answer binaries?');
   if (ByEncloseJS) console.log('  *** WARNING: this feature is likely to fail to \
-work properly on precompiled binaries if there are too many binaries to download.');
+work properly on precompiled binaries if there are too many assignments to download.');
   prompt.get([{
     name: 'binaries',
     description: '[y/n]'
@@ -625,10 +631,10 @@ work properly on precompiled binaries if there are too many binaries to download
     if (err) throw err;
     if (result.binaries == 'y' || result.binaries == 'Y' || result.binaries == 'yes'
         || result.binaries == 'Yes' || result.binaries == 'YES') {
-      console.log('We will try our best to download binaries');
+      console.log('We will try our best to download binaries.');
       return callback(undefined, true);
     } else {
-      console.log('Binaries will not get downloaded');
+      console.log('Binaries will not get downloaded.');
       return callback(undefined, false);
     }
   });
@@ -645,7 +651,8 @@ function options(csrf, usersData) {
     chooseAutomode(function(err, automode) {
       if (automode) {
         globalDownloadBinaries = true, globalAutomode = true;
-        loginEden(csrf, true, usersData.data.users[0].username, usersData.data.users[0].password, usersData);
+        loginEden(csrf, true, usersData.data.users[0].username,
+                  usersData.data.users[0].password, usersData);
       }
       else chooseDownloadBinaries(function(err, downloadBinaries) {
         if (downloadBinaries) globalDownloadBinaries = downloadBinaries;
@@ -657,7 +664,7 @@ function options(csrf, usersData) {
 
 function welcome(csrf, usersData) {
   console.log("Welcome!");
-    // allow the user to choose an account saved locally, if any
+    // allow the user to choose an account stored locally, if any
   options(csrf, usersData);
 }
 
@@ -666,8 +673,6 @@ request(edenPrefix + 'login/', function(err, response, body) {
   jQexec(body, function(err, window) {
     var $ = window.$;
     var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
-    // var usersData = new UsersData('.usersdata');
-    // return welcome(csrf, usersData);
     new UsersData('.usersdata', function(err, self) {
       welcome(csrf, self);
     });

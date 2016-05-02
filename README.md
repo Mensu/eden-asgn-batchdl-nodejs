@@ -1,12 +1,12 @@
 # Thanks To
 
-- <a href="https://github.com/DaddyTrap/eden_clone_codes" target="_blank">``DaddyTrap``</a> who inspired me as well to have a try on this kind of work
-- <a href="https://github.com/iebb/eden-asgn-batchdl-nodejs" target="_blank">``ieb``</a> who has laid a solid foundation for my later development and from whom this repository is forked
+- [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes) who inspired me as well to have a try
+- [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs) who has laid a solid foundation for my later development and from whom this repository is forked
 
 # New Features
- - **auto mode**: fetch your unfinished assignments automatically without inputting username and password
+ - **auto mode**: fetch your unfinished assignments automatically without inputting your username and password
  - **store your username and password** locally
- - **multiple ids input** supported
+ - **multiple id input** supported
  - download **standard answer binaries**
 
 # Downloaded Contents
@@ -19,78 +19,84 @@
 
 # Precompiled Binaries
 
-There are some precompiled binaries (using ``enclose``):
+There are some precompiled binaries ( by using ``enclose`` )
 
-<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe" target="_blank">``Windows-32bit``</a>
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe)
 ``19.9 MB``
 
-<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe" target="_blank">``Windows-64bit``</a>
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe)
 ``25.2 MB``
 
-<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64" target="_blank">``Mac-64bit``</a>
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64)
 ``29.5 MB``
 
-<a href="https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64" target="_blank">``Ubuntu-64bit``</a>
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64)
 ``31.3 MB``
 
-You only need to execute it.
+You only need to execute it
 
 # Suggestions on running
 
 - on Windows ( suppose the downloader is located in D:\eden\ )  
- **Note: It is highly recommended that you run the executable binaries under an *ASCII-only* path on Windows**  
- Create a .bat file containing
-```
+ **Note: It is highly recommended that you run the executable binaries under an *ASCII-only* path on Windows.**  
+\>\> Create a .bat file containing
+ 
+~~~
 cd /d "D:\eden"
 Downloader-Win64.exe
 pause
-``` 
-save it as run.bat and double click to run
+~~~
+save it as ``run.bat`` and double click to run
 
 - on Mac ( suppose the downloader is located in /Users/$USER/Downloads/ )  
-Create a .sh file containing
-```
+\>\> Create a .sh file containing
+
+~~~
 cd "/Users/$USER/Downloads"
 ./Downloader-Mac64
-```
-save it as run.sh and have it run on terminal (double click to run is possible as well)  
+~~~
+save it as ``run.sh``, use ``sudo chmod +x ./run.sh`` and have it run on terminal (double click to run is possible as well)  
 
 - on Ubuntu ( suppose the downloader is located in /home/$USER/Downloads/ )  
-Create a .sh file containing
-```
+\>\> Create a .sh file containing
+
+~~~
 cd "/home/$USER/Downloads"
 gnome-terminal -x bash -c "./Downloader-Ubuntu64; printf 'Please press Enter to continue'; read"
-```
-save it as run.sh and have it run on terminal (double click to run is possible as well)  
+~~~
+save it as ``run.sh``, use ``sudo chmod +x ./run.sh`` and have it run on terminal (double click to run is possible as well)  
 
-# Run with source
+# Run Source Code on node.js
 
-<a href="https://nodejs.org/en/" target="_blank">``node.js``</a> is required.
+[``node.js``](https://nodejs.org/en/) is required.
 
-```
+~~~
 node dl.js
-```
+~~~
 
 ## Install node.js on Windows
 
-<a href="https://nodejs.org/dist/v5.10.1/node-v5.10.1-x64.msi" target="_blank">``download nodejs v5.10.1 for windows``</a>
+[``download nodejs v5.10.1 for windows``](https://nodejs.org/dist/v5.10.1/node-v5.10.1-x64.msi)
 
-## Install node.js on Linux
+## Install node.js on Ubuntu
 
-```
+~~~
 curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 sudo apt-get install nodejs
-```
+~~~
 
 # Details
 
 1. When you fetch **unfinished** assignments automatically, the folders of all the assignments **are labelled "[unfinished]"**
-2. When you fetch assignments **by id**, the folders of the optional assignments **are labelled "[optional]"**
+2. When you fetch assignments **by ids**, the folders of the optional assignments **are labelled "[optional]"**
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
-5. If there are any submissions whose grades are positive or None, **the latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
-6. auto mode = login with the **first** account stored locally + fetch **unfinished** assignments + download standard answer binaries **on Win32 and Linux64**
-7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json. You may open it with an editor and it should be easy to understand. To reset, just remove that file.
+5. If there are any submissions whose grades are positive, **the latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
+6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win32 and Linux64**]
+7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json
+  1. username and password will be asked whether to store when they are used to login successfully
+  2. If the username and password combination stored locally is wrong, it will get removed
+
 
 -------
 

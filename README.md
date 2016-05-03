@@ -1,4 +1,6 @@
-# Thanks To
+#### Please feel free to fork the repository, create a new issue as well as make pull requests. Thanks for all participation in advance!
+
+# Thanks to
 
 - [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes) who inspired me as well to have a try
 - [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs) who has laid a solid foundation for my later development and from whom this repository is forked
@@ -8,6 +10,7 @@
  - **store your username and password** locally
  - **multiple id input** supported
  - download **standard answer binaries**
+ - **polish latest submission output** so that it becomes more convenient to read and utilize ([byproduct ``eden-submission-output-polisher``](https://github.co/Mensu/eden-submission-output-polisher)))
 
 # Downloaded Contents
 
@@ -15,22 +18,22 @@
 - Standard Answer Binaries **(new!)**
 - Your Answer (basis)
 - Unlocked Standard Answer
-- Latest Submission Output
+- polished Latest Submission Output **(new!)**
 
 # Precompiled Binaries
 
 There are some precompiled binaries ( by using ``enclose`` )
 
-[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win32.exe)
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Win32.exe)
 ``19.9 MB``
 
-[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Win64.exe)
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Win64.exe)
 ``25.2 MB``
 
-[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Mac64)
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Mac64)
 ``29.5 MB``
 
-[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha/Downloader-Ubuntu64)
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Ubuntu64)
 ``31.3 MB``
 
 You only need to execute it

@@ -10,7 +10,8 @@
  - **store your username and password** locally
  - **multiple id input** supported
  - download **standard answer binaries**
- - **polish latest submission output** so that it becomes more convenient to read and utilize ([byproduct ``eden-submission-output-polisher``](https://github.co/Mensu/eden-submission-output-polisher)))
+ - **polish latest submission output** so that it becomes more convenient to read and utilize  
+    ( [byproduct: ``eden-submission-output-polisher``](https://github.co/Mensu/eden-submission-output-polisher))
 
 # Downloaded Contents
 

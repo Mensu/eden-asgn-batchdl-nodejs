@@ -95,7 +95,7 @@ sudo apt-get install nodejs
 2. When you fetch assignments **by ids**, the folders of the optional assignments **are labelled "[optional]"**
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
-5. If there are any submissions whose grades are positive, **the latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
+5. If there are any submissions whose grades are positive and have yet to reach full marks, **the  polished latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
 6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win32 and Linux64**]
 7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json
   1. username and password will be asked whether to store when they are used to login successfully

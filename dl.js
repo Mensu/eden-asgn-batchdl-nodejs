@@ -268,7 +268,7 @@ function downloadStandardAnswerBinaries(Id, savePath, callback) {
 
 function polishSubmissionOutput(rawData) {
   var splitData = rawData.split('\n'), polishedData = '';
-    // flags we need in full marks judgment mode
+    // flags we need in full marks judgment
   var toJudge = false, fullmark = true;
   var beforeGoogleStyle = true, beforeStandard = true, beforeMemory = true;
   var afterExecRandom = false;
@@ -282,16 +282,18 @@ function polishSubmissionOutput(rawData) {
   var toPolishInput = false, isTestInput = false;
 
     // flags we need in linenum addition mode
-                          // isYSOutput: is Your 
+                          // isYSOutput: is either 'Your program's stdout output:' or 'Standard answer's stdout output:'
   var toAddLinenum = false, isYSOutput = false;
   var linenum = 0;
 
     // deal with data line by line
   for (i in splitData) {
 
+      // when we are out of linenum addition mode:
       // if the line starts with '     Your program's stdout output:' or '     Standard answer's stdout output:'
-      //    and we are out of linenum addition mode
-    if (!toAddLinenum && afterExecRandom && splitData[i].match(/^((     Y)|(     S))/)) {
+      //    and the block below needs linenum
+    if (!toAddLinenum && (afterExecRandom || (splitData[i + 2] && splitData[i + 2].match(/^    \|/)))
+      && splitData[i].match(/^((     Y)|(     S))/)) {
         // enter polish linenum addition mode
       toAddLinenum = true, isYSOutput = true;
       borderToEncounter = 2, linenum = 1;
@@ -433,7 +435,7 @@ In this way we obtain as a result:
       toPolishInput = true, isTestInput = true;
       borderToEncounter = 2, start = 5;
     }
-      // access input polish mode
+      // in input polish mode
     if (toPolishInput) {
       isBorder = splitData[i].match(/^    \+/);
         // if the line is a border
@@ -650,15 +652,15 @@ function fetchUnfinished(username) {
 }
 
 
-function UsersData(filename, callback) {
+function UsersDataManager(filename, callback) {
     // this => *this && public
   this.data = {"users": []};
   this.total = 0;
   var self = this;
-  UsersData.prototype.readDataFrom = function(filename, callback) {
+  UsersDataManager.prototype.readDataFrom = function(filename, callback) {
     fs.exists(filename, function(exist) {
       if (!exist) {
-          // create an empty usersData object
+          // create an empty usersDataManager object
         self.data = {"users": []};
         self.total = self.data.users.length;
         if (callback) callback();
@@ -667,7 +669,7 @@ function UsersData(filename, callback) {
         fs.readFile(filename, 'utf-8', function(err, rawData) {
           if (err) throw err;
           else {
-              // create a usersData object from the file
+              // create a usersDataManager object from the file
             self.data = JSON.parse(rawData);
             self.total = self.data.users.length;
             if (callback) callback();
@@ -676,35 +678,35 @@ function UsersData(filename, callback) {
       }
     });
   };
-  UsersData.prototype.writeDataTo = function(filename, callback) {
+  UsersDataManager.prototype.writeDataTo = function(filename, callback) {
     fs.writeFile('./' + filename, JSON.stringify(this.data), function() {
       if (callback) callback();
     });
   };
-  UsersData.prototype.listUsernames = function() {
+  UsersDataManager.prototype.listUsernames = function() {
     for (var i = 0; i < this.total; ++i) {
       console.log('[' + (parseInt(i) + parseInt(1)) + ']', this.data.users[i].username);
     }
   };
-  UsersData.prototype.findAccountByUsername = function(username) {
+  UsersDataManager.prototype.findAccountByUsername = function(username) {
     for (var i = 0; i < this.total; ++i) {
       if (username == this.data.users[i].username) return i;
     }
       // not found: return a new index which makes it convenient to create new accounts
     return this.total;
   };
-  UsersData.prototype.addAccount = function(username, password) {
+  UsersDataManager.prototype.addAccount = function(username, password) {
     this.data.users[this.findAccountByUsername(username)] = {
       "username": username,
       "password": password
     }
     ++(this.total);
   };
-  UsersData.prototype.getAccountByListedIndex = function(index) {
+  UsersDataManager.prototype.getAccountByListedIndex = function(index) {
     if (1 <= index && index <= this.total) return this.data.users[index - 1];
     else return false;
   };
-  UsersData.prototype.removeAccountByUsername = function(username, callback) {
+  UsersDataManager.prototype.removeAccountByUsername = function(username, callback) {
     this.data.users[this.findAccountByUsername(username)]
       = this.data.users[this.total - 1];
     this.data.users[this.total - 1] = {"username": "", "password": ""};
@@ -712,7 +714,7 @@ function UsersData(filename, callback) {
     if (callback) callback();
   }
   this.readDataFrom(filename, function() {
-      // call UsersData's callback
+      // call UsersDataManager's callback
     if (callback) callback(undefined, self);
   });
 }
@@ -737,7 +739,7 @@ function getAssignmentsId(username) {
   }], function(err, result) {
     if (err) throw err;
     var fetched = false;  // flag for unfinished assignments
-    var rawId = result.id, count = 0;
+    var rawId = result.id, countValidId = 0;
       // simply press Enter => fetch unfinished assignments
     if (rawId.length == 1 && rawId[0] == '') {
       fetched = true;
@@ -753,8 +755,8 @@ function getAssignmentsId(username) {
         fetchUnfinished(username);
       } else if (oneId.match(/^(\d){4}$/)) {
           // id is valid => fetch the desired assignment
-        ++count;
-        if (count == 4) encloseJSWarning();
+        ++countValidId;
+        if (countValidId == 4) encloseJSWarning();
         console.log('Ready to fetch the desired assignments (id = ' + oneId + ')');
         FetchOne(oneId, true, "", username);
       } else if (oneId != '') {  // else => ignore
@@ -762,14 +764,14 @@ function getAssignmentsId(username) {
       }
     }
       // no valid id input
-    if (count == 0 && !fetched) {
+    if (countValidId == 0 && !fetched) {
       console.log('Bad input! Please try again...');
       getAssignmentsId(username);
     }
   });
 }
 
-function loginEden(csrf, fromData, username, password, usersData) {
+function loginEden(csrf, fromData, username, password, usersDataManager) {
   console.log("Logging in....");
   request.post({
     url: edenPrefix + 'login/',
@@ -791,16 +793,16 @@ function loginEden(csrf, fromData, username, password, usersData) {
         }
         console.log(errorText, "\nLogin failed, please retry :(");
         if (fromData && incorrectCombi) {
-            // combination from usersData is wrong => remove the wrong record
-          usersData.removeAccountByUsername(username, function() {
+            // combination from usersDataManager is wrong => remove the wrong record
+          usersDataManager.removeAccountByUsername(username, function() {
               // and choose again
-            return chooseAccount(csrf, usersData);
+            return chooseAccount(csrf, usersDataManager);
           });
-        } else return chooseAccount(csrf, usersData);  // directly choose again
+        } else return chooseAccount(csrf, usersDataManager);  // directly choose again
       } else {
         console.log("Logged in with username", username);
         if (fromData) {
-            // login with the combination from usersData => get Id directly
+            // login with the combination from usersDataManager => get Id directly
           getAssignmentsId(username);
         } else {
             // login with the user-input combination
@@ -814,8 +816,8 @@ function loginEden(csrf, fromData, username, password, usersData) {
             if (err) throw err;
             if (result.store == 'y' || result.store == 'Y' || result.store == 'yes'
                 || result.store == 'Yes' || result.store == 'YES') {  // yes
-              usersData.addAccount(username, password);
-              usersData.writeDataTo('.usersdata', function(err) {
+              usersDataManager.addAccount(username, password);
+              usersDataManager.writeDataTo('.usersdata', function(err) {
                 if (err) {
                   console.log(err.what(), '\nfailed to store\n');
                   getAssignmentsId(username);
@@ -834,10 +836,10 @@ function loginEden(csrf, fromData, username, password, usersData) {
   });
 }
 
-function getUsernameAndPassword(csrf, chosenUser, usersData) {
+function getUsernameAndPassword(csrf, chosenUser, usersDataManager) {
    prompt.start();
   if (chosenUser.password) {  // username and password from the chosen account
-    loginEden(csrf, true, chosenUser.username, chosenUser.password, usersData);
+    loginEden(csrf, true, chosenUser.username, chosenUser.password, usersDataManager);
   } else {
     prompt.get(['username', {
       name: 'password',
@@ -847,19 +849,19 @@ function getUsernameAndPassword(csrf, chosenUser, usersData) {
     }], function(err, result) {
       if (err) throw err;
         // username and password from user input
-      return loginEden(csrf, false, result.username, result.password, usersData);
+      return loginEden(csrf, false, result.username, result.password, usersDataManager);
     });
   }
 }
 
-function chooseAccount(csrf, usersData) {
-  var total = usersData.total;
-  if (total == 0) {  // no usersdata stored locally => obtain username and password from user
-    getUsernameAndPassword(csrf, {'username': '', 'password': ''}, usersData);
+function chooseAccount(csrf, usersDataManager) {
+  var total = usersDataManager.total;
+  if (total == 0) {  // no users data stored locally => obtain username and password from user
+    getUsernameAndPassword(csrf, {'username': '', 'password': ''}, usersDataManager);
   } else {
     console.log("Please choose an account listed below to login by [inputting its index],");
     console.log("or [simply press Enter] so as to input username and password by yourself\n");
-    usersData.listUsernames();
+    usersDataManager.listUsernames();
     prompt.start();
     prompt.get([{
       name: 'choice',
@@ -868,13 +870,13 @@ function chooseAccount(csrf, usersData) {
       if (err) throw err;
       if (result.choice == '') {
           // simply press Enter => obtain username and password from user
-        return getUsernameAndPassword(csrf, {'username': '', 'password': ''}, usersData);
+        return getUsernameAndPassword(csrf, {'username': '', 'password': ''}, usersDataManager);
       } else if (1 <= parseInt(result.choice) && parseInt(result.choice) <= total) {
           // valid index => obtain username and password from the chosen account
-        return getUsernameAndPassword(csrf, usersData.getAccountByListedIndex(parseInt(result.choice)), usersData);
+        return getUsernameAndPassword(csrf, usersDataManager.getAccountByListedIndex(parseInt(result.choice)), usersDataManager);
       } else {  // invalid index => choose again
         console.log("Error: Invalid index detected. Please try again with a valid index.");
-        return chooseAccount(csrf, usersData);
+        return chooseAccount(csrf, usersDataManager);
       }
     });
   }
@@ -891,8 +893,8 @@ fetch the unfinished assignments and download binaries executable on Win64 and L
     description: '[y/n]'
   }], function(err, result) {
     if (err) throw err;
-    if (result.automode == '' || result.automode == 'y' || result.automode == 'Y' || result.automode == 'yes'
-        || result.automode == 'Yes' || result.automode == 'YES') {
+    if (result.automode == '' || result.automode == 'y' || result.automode == 'Y'
+      || result.automode == 'yes' || result.automode == 'Yes' || result.automode == 'YES') {
       console.log('Auto mode started!');
       return callback(undefined, true);
   } else {
@@ -924,32 +926,32 @@ work properly on precompiled binaries if there are too many assignments to downl
   });
 }
 
-function options(csrf, usersData) {
-  var total = usersData.total;
-  if (total == 0) {  // no usersData stored locally => no automode is not available
+function options(csrf, usersDataManager) {
+  var total = usersDataManager.total;
+  if (total == 0) {  // no users data stored locally => no automode is not available
     chooseDownloadBinaries(function(err, downloadBinaries) {
       if (downloadBinaries) globalDownloadBinaries = downloadBinaries;
-      chooseAccount(csrf, usersData);
+      chooseAccount(csrf, usersDataManager);
     });
   } else {
     chooseAutomode(function(err, automode) {
       if (automode) {
         globalDownloadBinaries = true, globalAutomode = true;
-        loginEden(csrf, true, usersData.data.users[0].username,
-                  usersData.data.users[0].password, usersData);
+        loginEden(csrf, true, usersDataManager.data.users[0].username,
+                  usersDataManager.data.users[0].password, usersDataManager);
       }
       else chooseDownloadBinaries(function(err, downloadBinaries) {
         if (downloadBinaries) globalDownloadBinaries = downloadBinaries;
-        chooseAccount(csrf, usersData);
+        chooseAccount(csrf, usersDataManager);
       });
     }); 
   }
 }
 
-function welcome(csrf, usersData) {
+function welcome(csrf, usersDataManager) {
   console.log("Welcome!");
     // allow the user to choose an account stored locally, if any
-  options(csrf, usersData);
+  options(csrf, usersDataManager);
 }
 
 request(edenPrefix + 'login/', function(err, response, body) {
@@ -957,7 +959,7 @@ request(edenPrefix + 'login/', function(err, response, body) {
   jQexec(body, function(err, window) {
     var $ = window.$;
     var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
-    new UsersData('.usersdata', function(err, self) {
+    new UsersDataManager('.usersdata', function(err, self) {
       welcome(csrf, self);
     });
   });

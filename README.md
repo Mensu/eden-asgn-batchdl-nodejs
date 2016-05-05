@@ -65,8 +65,7 @@ save it as ``run.sh``, use ``sudo chmod +x ./run.sh /Users/$USER/Downloads/Downl
 \>\> Create a .sh file containing
 
 ~~~
-cd "/home/$USER/Downloads"
-gnome-terminal -x bash -c "./Downloader-Ubuntu64; printf 'Please press Enter to continue'; read"
+gnome-terminal -x bash -c "cd '/home/$USER/Downloads'; ./Downloader-Ubuntu64; printf 'Please press Enter to continue'; read"
 ~~~
 save it as ``run.sh``, use ``sudo chmod +x ./run.sh /home/$USER/Downloads/Downloader-Ubuntu64`` before having it run on terminal (double click to run is possible as well)  
 

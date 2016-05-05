@@ -1,4 +1,4 @@
-#### Please feel free to fork the repository, create a new issue as well as make pull requests. Thanks for all participation in advance!
+#### Please feel free to fork the repository, create new issues as well as make pull requests. Thanks in advance for all your participation!
 
 # Thanks to
 
@@ -11,7 +11,7 @@
  - **multiple id input** supported
  - download **standard answer binaries**
  - **polish latest submission output** so that it becomes more convenient to read and utilize  
-    ( [byproduct: ``eden-submission-output-polisher``](https://github.com/Mensu/eden-submission-output-polisher))
+     [``byproduct: eden-submission-output-polisher``](https://github.com/Mensu/eden-submission-output-polisher)
 
 # Downloaded Contents
 
@@ -23,7 +23,7 @@
 
 # Precompiled Binaries
 
-There are some precompiled binaries ( by using ``enclose`` )
+There are some precompiled binaries ( by using ``enclose``)
 
 [``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Win32.exe)
 ``19.9 MB``
@@ -59,7 +59,7 @@ save it as ``run.bat`` and double click to run
 cd "/Users/$USER/Downloads"
 ./Downloader-Mac64
 ~~~
-save it as ``run.sh``, use ``sudo chmod +x ./run.sh`` and have it run on terminal (double click to run is possible as well)  
+save it as ``run.sh``, use ``sudo chmod +x ./run.sh /Users/$USER/Downloads/Downloader-Mac64`` before having it run on terminal (double click to run is possible as well)  
 
 - on Ubuntu ( suppose the downloader is located in /home/$USER/Downloads/ )  
 \>\> Create a .sh file containing
@@ -68,7 +68,7 @@ save it as ``run.sh``, use ``sudo chmod +x ./run.sh`` and have it run on termina
 cd "/home/$USER/Downloads"
 gnome-terminal -x bash -c "./Downloader-Ubuntu64; printf 'Please press Enter to continue'; read"
 ~~~
-save it as ``run.sh``, use ``sudo chmod +x ./run.sh`` and have it run on terminal (double click to run is possible as well)  
+save it as ``run.sh``, use ``sudo chmod +x ./run.sh /home/$USER/Downloads/Downloader-Ubuntu64`` before having it run on terminal (double click to run is possible as well)  
 
 # Run Source Code on node.js
 
@@ -95,8 +95,8 @@ sudo apt-get install nodejs
 2. When you fetch assignments **by ids**, the folders of the optional assignments **are labelled "[optional]"**
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
-5. If there are any submissions whose grades are positive and have yet to reach full marks, **the  polished latest one's output** is downloaded. Otherwise, no latest submission outputs are generated
-6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win32 and Linux64**]
+5. If there are any submissions whose grades are *positive and have yet to reach full marks*, **the  latest one's polished output** is downloaded. Otherwise, no latest submission outputs are generated
+6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win64 and Linux64**]
 7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json
   1. username and password will be asked whether to store when they are used to login successfully
   2. If the username and password combination stored locally is wrong, it will get removed

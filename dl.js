@@ -1,5 +1,6 @@
+var windows32 = false;
 var windows = false;
-var ByEncloseJS = false;
+var ByEncloseJS = true;
 
 var sanitize = require('sanitize-filename');
 var request = require('request');
@@ -21,11 +22,17 @@ var globalDownloadBinaries = false;
 
 function writeFile(path, contents, callback) {
   mkdirp(getDirName(path), function(err) {
-    if (err) throw err;
+    if (err) {
+      if (callback) return console.log('', err.message), callback(err);
+      else throw err;
+    }
     if (windows) contents = contents.replace(/\n/g, '\r\n');
     fs.writeFile(path, contents, function(err) {
-      if (err) throw err;
-      else if (callback) callback();
+      if (err) {
+        if (callback) return console.log('', err.message), callback(err);
+        else throw err;
+      }
+      else if (callback) return callback(null);
     });
   });
 }
@@ -38,11 +45,10 @@ function jQexec(body, cb) {
   });
 }
 
-function connectionFailed(err) {
-  console.log("\nConnectionError: Failed to connect to eden, please try again later:(");
+function connectionFailed() {
+  console.log("\nConnectionError: Failed to connect to Eden, please try again later:(");
   console.log("  *** Lack of access to internet or Dr. Wang being updating codes \
 may cause this problem. ");
-  throw err;
 }
 
 function encloseJSWarning() {
@@ -56,18 +62,21 @@ su/eden-asgn-batchdl-nodejs) for more information.\n');
 
 function downloadFile(url, dest, callback) {
   mkdirp(getDirName(dest), function(err) {
-    if (err) throw err;
+    if (err) {
+      if (callback) return console.log('', err.message), callback(err);
+      else throw err;
+    }
     var file = fs.createWriteStream(dest);
     var sendReq = request.get(url);
     // verify response code
     sendReq.on('response', function(response) {
       if (response.statusCode !== 200)
-        return callback('Response status was ' + response.statusCode);
+        return console.log('', 'Response status was ' + response.statusCode), callback(new Error('Bad Response status' + response.statusCode));
     });
     // check for request errors
-    sendReq.on('error', function (err) {
+    sendReq.on('error', function(err) {
       fs.unlink(dest);
-      if (callback) return callback(err.message);
+      if (callback) return console.log('', err.message), callback(err);
     });
     sendReq.pipe(file);
     file.on('finish', function() {
@@ -75,7 +84,7 @@ function downloadFile(url, dest, callback) {
     });
     file.on('error', function(err) {  // Handle errors
       fs.unlink(dest); // Delete the file async.
-      if (callback) return callback(err.message);
+      if (callback) return console.log('', err.message), callback(err);
     });
   });
 };
@@ -97,8 +106,8 @@ function fetchCodeFromCurrentPage(editable, $, selector, savePath, subfolder, ca
       filename = sanitize(w);
     }
     code += $($(this).attr('href') + filter).text();
-    writeFile(savePath + subfolder + filename, code, function() {
-      if (index == length - 1 && callback) {callback();}
+    writeFile(savePath + subfolder + filename, code, function(err) {
+      if (index == length - 1 && callback) {callback(err);}
     });
     //devFile += util.format("[Unit%d]\nFileName=%s\n", ++i, filename);
   });
@@ -110,10 +119,10 @@ function fetchSecondBlock($, savePath, callback) {
   if ($('#tab-nondiv-containers').length == 1)
       // if there exists the second block => it must be the standard answer
     fetchCodeFromCurrentPage(false, $, '#tab-nondiv-containers .tab a', savePath,
-                            'Standard Answer/', function() {
-      if (callback) callback();
+                            'Standard Answer/', function(err) {
+      if (callback) return callback(err);
     });
-  else if (callback) callback();  // if there is no second block => quit
+  else if (callback) return callback(null);  // if there is no second block => quit
 }
 
 
@@ -125,6 +134,7 @@ function fetchDHL($, hardDue, savePath, callback) {
           // 2 or 5 => Latest Submission Output (if any)
   var length = $('.ass > .panel').length;
   var descriptionText = "", descriptionFilename = "Description & Hint.txt";
+  var error = null;
   $("br").replaceWith("\n"), $("p").append("\n");
   $('.ass > .panel').each(function(index) {
     if (index < 2) {
@@ -133,7 +143,9 @@ function fetchDHL($, hardDue, savePath, callback) {
       if (index == 1) descriptionText += "\n\n>>>>>>>>>>>>>>>>>>> Hint <<<<<<<<<<<<<<<<<<<<\n\n";
       descriptionText += $(this).text();
         // index = 1 => ready to save the Description & Hint file now
-      if (index == 1) writeFile(savePath + descriptionFilename, descriptionText);
+      if (index == 1) writeFile(savePath + descriptionFilename, descriptionText, function(err) {
+        if (err) error = err;
+      });
         // go on with the loop
       return true;
     }
@@ -141,29 +153,32 @@ function fetchDHL($, hardDue, savePath, callback) {
       // index = 2, if hard due hasn't passed
       // index = 5, if hard due has passed
     if (index == (2 + 3 * hardDue)) {
-      fetchLatestSubmissionOutput($, $(this), hardDue, savePath, function() {
-        if (callback) callback();
+      fetchLatestSubmissionOutput($, $(this), hardDue, savePath, function(err) {
+        if (callback) callback(err);
       });
         // break the loop
       return false;
     }
   });
     // if there is no latest submission, just call callback
-  if ((2 + 3 * hardDue) >= length && callback) callback();
+  if ((2 + 3 * hardDue) >= length && callback) return callback(error);
 }
 
 
 function fetchCodeFromSubmissionRecord(url, savePath, subfolder, Id, callback) {
 // visit the submission record page and fetch the code in that page
   request.get(url, function(e, r, body) {
-    if (e) connectionFailed(e);
+    if (e) {
+      connectionFailed(e);
+      if (callback) return callback(e);
+    }
     jQexec(body, function(err, window) {
-      var $ = window.$;
-      fetchCodeFromCurrentPage(false, $, '#tab-nondiv-container .tab a', savePath,
-                                '', function() {
-        if (callback) callback();
+        var $ = window.$;
+        fetchCodeFromCurrentPage(false, $, '#tab-nondiv-container .tab a', savePath,
+                                  '', function(err) {
+          if (callback) return callback(err);
+        });
       });
-    });
   });
 }
 
@@ -173,11 +188,11 @@ function fetchLatestSubmissionAfterHardDue($, hardDue, Id, savePath, callback) {
   if (hardDue && $('.ass .dataTable a').length) {
       // if the hard due has passed and there exist any submissions
     var latestSubmissionURL = edenRoot + $('.ass .dataTable a').first().attr('href');
-    fetchCodeFromSubmissionRecord(latestSubmissionURL, savePath, "", Id, function() {
-      if (callback) callback();
+    fetchCodeFromSubmissionRecord(latestSubmissionURL, savePath, "", Id, function(err) {
+      if (callback) return callback(err);
     });
   }
-  else if (callback) callback();
+  else if (callback) return callback(null);
 }
 
 
@@ -222,54 +237,71 @@ function fetchLatestSubmissionOutput($, self, hardDue, savePath, callback) {
     output = polishSubmissionOutput(self.text());
       // if output is not empty, save
     if (output.length) writeFile(savePath + latestSubmissionOutputFilename,
-                                  output, function() {
-        if (callback) callback();
+                                  output, function(err) {
+        if (callback) return callback(err);
       });
-    else if (callback) callback();
-    } else if (latestSubmissionURL.length > 1) {
+    else if (callback) return callback(null);
+  } else if (latestSubmissionURL.length > 1) {
       // case 2: visit the corresponding page
     request.get(latestSubmissionURL, function(e, r, body) {
-      if (e) connectionFailed(e);
+      if (e) {
+        connectionFailed(e);
+        if (callback) return callback(e);
+      }
       jQexec(body, function(err, window) {
-        var $ = window.$;
-          // make it convenient for the user to get test input
-        output = polishSubmissionOutput($('#submission-content .panel').text());
-          // if output is not empty, save
-        if (output.length) writeFile(savePath + latestSubmissionOutputFilename,
-                                      output, function() {
-          if (callback) callback();
+          var $ = window.$;
+            // make it convenient for the user to get test input
+          output = polishSubmissionOutput($('#submission-content .panel').text());
+            // if output is not empty, save
+          if (output.length) writeFile(savePath + latestSubmissionOutputFilename,
+                                        output, function(err) {
+              if (callback) return callback(err);
+            });
+          else if (callback) return callback(null);
         });
-        else if (callback) callback();
-      });
     });
-  } else if (callback) callback();  // case 3: do nothing
+  } else if (callback) return callback(null);  // case 3: do nothing
 }
 
 
 function downloadStandardAnswerBinaries(Id, savePath, callback) {
-  if (!globalDownloadBinaries) return callback();
+  if (!globalDownloadBinaries) return callback(null);
   var subfolder = 'Standard Answer Binaries/', filename = 'a.out';
+  var error = null;
   downloadFile(edenPrefix + 'linux64/' + Id, savePath + subfolder + 'linux64-'
-                + filename, function() {
-    downloadFile(edenPrefix + 'win64/' + Id, savePath + subfolder + 'win64-'
-                  + filename, function() {
-      if (globalAutomode)
-        return callback();
-      else
-        downloadFile(edenPrefix + 'win32/' + Id, savePath + subfolder
-                      + 'win32-' + filename, function() {
-        // seems that linux 32bit compiler on eden has been out of work
-        //downloadFile(edenPrefix + 'linux32/' + Id, savePath + subfolder + 'linux64-' + filename, function() {callback();});
-        callback();
+                + filename, function(err) {
+    if (err) error = err;
+    if (!windows32) downloadFile(edenPrefix + 'win64/' + Id, savePath + subfolder + 'win64-'
+                  + filename, function(err) {
+        if (err) error = err;
+        if (globalAutomode) {
+          if (callback) return callback(error);
+        } else downloadFile(edenPrefix + 'win32/' + Id, savePath + subfolder
+                      + 'win32-' + filename, function(err) {
+            if (err) error = err;
+          // seems that linux 32bit compiler on eden has been out of work
+          //downloadFile(edenPrefix + 'linux32/' + Id, savePath + subfolder + 'linux64-' + filename, function() {callback();});
+            return callback(error);
+          });
       });
-    });
+    else downloadFile(edenPrefix + 'win32/' + Id, savePath + subfolder + 'win32-'
+                  + filename, function(err) {
+        if (err) error = err;
+        if (globalAutomode) {
+          if (callback) return callback(error);
+        } else downloadFile(edenPrefix + 'win64/' + Id, savePath + subfolder
+                        + 'win64-' + filename, function(err) {
+            if (err) error = err;
+            return callback(error);
+          });
+      });
   });
 }
 
 function polishSubmissionOutput(rawData) {
   var splitData = rawData.split('\n'), polishedData = '';
     // flags we need in full marks judgment
-  var toJudge = false, fullmark = true;
+  var toJudgeFullmark = false, fullmark = true;
   var beforeGoogleStyle = true, beforeStandard = true, beforeMemory = true;
   var afterExecRandom = false;
 
@@ -430,7 +462,7 @@ In this way we obtain as a result:
 
       // if the line starts with '     [Test input]'    (=> is actually [Test input])
       //    and we are out of input polish mode
-    if (!toPolishInput && splitData[i].match(/^     \[T/)) {
+    if (!toPolishInput && splitData[i].match(/^     \[Te/)) {
         // enter polish test input mode
       toPolishInput = true, isTestInput = true;
       borderToEncounter = 2, start = 5;
@@ -487,13 +519,13 @@ Case 2: If the line is a border:
 0123456
 ~~~~~~~~~~~~~~~~~~~~
 
-   *** we start from index #4 and obtain ' +---------...' before appending '\n'
+   *** we start from index #4 and obtain '+---------...' before appending '\n'
 0123456
 >>>>+---------------------------------------------------------------------<<<
 0123456
 
 =>
- +---------------------------------------------------------------------\n
++---------------------------------------------------------------------\n
 
 
 Case 3: If the line contains input data:
@@ -522,9 +554,9 @@ In this way we obtain as a result:
 */
     
     if (!(toPolishInput && toAddLinenum)) polishedData += (splitData[i] + '\n');
-    if (toJudge) {
+    if (toJudgeFullmark) {
       if (!splitData[i].match(/^Pass/)) fullmark = false;
-      toJudge = false;
+      toJudgeFullmark = false;
     }
     if (beforeMemory) {
       if (!afterExecRandom) {
@@ -532,22 +564,22 @@ In this way we obtain as a result:
           if (beforeGoogleStyle) {
             if (splitData[i].match(/: check_style]/)) {
               beforeGoogleStyle = false;
-              if (fullmark) toJudge = true;
+              if (fullmark) toJudgeFullmark = true;
             }
           }
           if (splitData[i].match(/: execute_s/)) {
             beforeStandard = false;
-            if (fullmark) toJudge = true;
+            if (fullmark) toJudgeFullmark = true;
           }
         }
          if (splitData[i].match(/: execute_r/)) {
            afterExecRandom = true;
-           if (fullmark) toJudge = true;
+           if (fullmark) toJudgeFullmark = true;
          }
        }
       if (splitData[i].match(/: validate_m/)) {
         beforeMemory = false;
-        if (fullmark) toJudge = true;
+        if (fullmark) toJudgeFullmark = true;
       }
     }
   }
@@ -556,10 +588,13 @@ In this way we obtain as a result:
 
 
 function FetchOne(Id, finished, Title, username) {
-  if (Title.length) console.log("Fetching Assignment", Id, Title, "....");
-  else console.log("Fetching Assignment", Id, "....");
+  if (Title.length) console.log("Fetching unfinished assignment", Id, Title, "....");
+  else console.log("Fetching assignment", Id, "....");
   request.get(edenPrefix + 'ass/' + Id, function(e, r, body) {
-    if (e) connectionFailed(e);
+    if (e) {
+      connectionFailed(e);
+      throw e;
+    }
     jQexec(body, function(err, window) {
       var $ = window.$, Title = $('.ass h1').first().text().replace(/^\s+/, '').replace(/\s+$/, '');
       var folder = "", devFile = "", isCpp = 0, i = 0;
@@ -592,14 +627,15 @@ function FetchOne(Id, finished, Title, username) {
         console.log("\nError: No code files exist. (the assignment id is " + Id + ")");
         console.log("  *** It is suggested that you check out whether the assignment actually exists, \
 is being graded, or is in plagiarism pending.");
+        console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
         return;
       }
 
         // set the path to save codes and the folder's name
       var optionalTag = $('.ass').get(0).childNodes[7].childNodes[0].textContent;
-      if (~optionalTag.indexOf('Optional')) folder += ("[optional] ");
+      if (~optionalTag.indexOf('Optional')) folder += ("[opt] ");
         // set folder's name
-      if (!finished) folder += "[unfinished] ";
+      if (!finished) folder += "[todo] ";
       folder += sanitize(Id) + ' ' + sanitize(Title);
 
       var savePath = "./saved/" + username + "/" + folder + "/";
@@ -607,19 +643,25 @@ is being graded, or is in plagiarism pending.");
       var editable = ((hardDue) ? false : true);
       var subfolder = ((hardDue) ? 'Standard Answer/' : '');
 
-
+      var error = null;
         /* ---- Here we begin to fetch codes ---- */
         // case 1, 2, 3: deal with the first "block"
-      fetchCodeFromCurrentPage(editable, $, '#tab-nondiv-container .tab a', savePath, subfolder, function() {
+      fetchCodeFromCurrentPage(editable, $, '#tab-nondiv-container .tab a', savePath, subfolder, function(err) {
+        if (err) error = err;
           // case 2: deal with the second block, if any
-        fetchSecondBlock($, savePath, function() {
+        fetchSecondBlock($, savePath, function(err) {
+          if (err) error = err;
             // deal with Description, Hint and Latest Submission Output
-          fetchDHL($, hardDue, savePath, function() {
+          fetchDHL($, hardDue, savePath, function(err) {
+            if (err) error = err;
               // deal with the latest submission
-            fetchLatestSubmissionAfterHardDue($, hardDue, Id, savePath, function() {
+            fetchLatestSubmissionAfterHardDue($, hardDue, Id, savePath, function(err) {
+              if (err) error = err;
                 // download binaries
-              downloadStandardAnswerBinaries(Id, savePath, function() {
-                console.log('  ... Assignment ' + Id + ' downloaded successfully');
+              downloadStandardAnswerBinaries(Id, savePath, function(err) {
+                if (err) error = err;
+                if (error) console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
+                else console.log('  ... Assignment ' + Id + ' downloaded successfully!');
               });
             });
           });
@@ -637,7 +679,10 @@ is being graded, or is in plagiarism pending.");
 
 function fetchUnfinished(username) {
   request.get(edenPrefix + 'ass/', function(e, r, body) {
-    if (e) connectionFailed(e);
+    if (e) {
+      connectionFailed(e);
+      throw e;
+    }
     jQexec(body, function(err, window) {
         var $ = window.$;
         if ($('.item-ass a').length > 6) encloseJSWarning();
@@ -663,16 +708,18 @@ function UsersDataManager(filename, callback) {
           // create an empty usersDataManager object
         self.data = {"users": []};
         self.total = self.data.users.length;
-        if (callback) callback();
+        if (callback) callback(null);
       } else {
           // read the file
         fs.readFile(filename, 'utf-8', function(err, rawData) {
-          if (err) throw err;
-          else {
+          if (err) {
+            if (callback) console.log('', err.message), callback(err);
+            else throw err;
+          } else {
               // create a usersDataManager object from the file
             self.data = JSON.parse(rawData);
             self.total = self.data.users.length;
-            if (callback) callback();
+            if (callback) callback(null);
           }
         });
       }
@@ -680,7 +727,7 @@ function UsersDataManager(filename, callback) {
   };
   UsersDataManager.prototype.writeDataTo = function(filename, callback) {
     fs.writeFile('./' + filename, JSON.stringify(this.data), function() {
-      if (callback) callback();
+      if (callback) callback(null);
     });
   };
   UsersDataManager.prototype.listUsernames = function() {
@@ -704,7 +751,7 @@ function UsersDataManager(filename, callback) {
   };
   UsersDataManager.prototype.getAccountByListedIndex = function(index) {
     if (1 <= index && index <= this.total) return this.data.users[index - 1];
-    else return false;
+    else return {'username': '', 'password': ''};
   };
   UsersDataManager.prototype.removeAccountByUsername = function(username, callback) {
     this.data.users[this.findAccountByUsername(username)]
@@ -713,9 +760,9 @@ function UsersDataManager(filename, callback) {
     --(this.total);
     if (callback) callback();
   }
-  this.readDataFrom(filename, function() {
+  this.readDataFrom(filename, function(err) {
       // call UsersDataManager's callback
-    if (callback) callback(undefined, self);
+    if (callback) callback(err, self);
   });
 }
 
@@ -731,7 +778,7 @@ function getAssignmentsId(username) {
   console.log('  *** Note: a valid assignment id is a [four-digit] number like 6910');
   console.log('  *** multiple ids are allowed like 6910 6911 6912, with ids separated by spaces');
   console.log('  *** you may also input a "u" as an id to fetch unfinished assignments,');
-  console.log('  *** like 6910 u 2035    => 6910, unfinished ones and 2035 will be fetched');
+  console.log('  *** like 6910 u 2035  => 6910, unfinished ones and 2035 will be fetched');
   prompt.get([{
     name: 'id',
     type: 'string',
@@ -757,7 +804,7 @@ function getAssignmentsId(username) {
           // id is valid => fetch the desired assignment
         ++countValidId;
         if (countValidId == 4) encloseJSWarning();
-        console.log('Ready to fetch the desired assignments (id = ' + oneId + ')');
+        console.log('Ready to fetch the desired assignment (id = ' + oneId + ')');
         FetchOne(oneId, true, "", username);
       } else if (oneId != '') {  // else => ignore
         console.log('invalid id "' + oneId + '" ignored');
@@ -819,7 +866,7 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
               usersDataManager.addAccount(username, password);
               usersDataManager.writeDataTo('.usersdata', function(err) {
                 if (err) {
-                  console.log(err.what(), '\nfailed to store\n');
+                  console.log('', err.message, '\nFailed to store\n');
                   getAssignmentsId(username);
                 }
                 console.log('... successfully stored\n');
@@ -887,7 +934,8 @@ function chooseAutomode(callback) {
   prompt.start();
   console.log('Would you like to access auto mode? [simply press Enter] to access!');
   console.log('  *** In auto mode, we will use the first account stored locally to \
-fetch the unfinished assignments and download binaries executable on Win64 and Linux64');
+fetch the unfinished assignments and download binaries executable on Windows '
++ ((windows32) ? '32' : '64') + 'bit and Linux 64bit');
   prompt.get([{
     name: 'automode',
     description: '[y/n]'
@@ -955,13 +1003,23 @@ function welcome(csrf, usersDataManager) {
 }
 
 request(edenPrefix + 'login/', function(err, response, body) {
-  if (err) connectionFailed(err);
+  if (err) {
+    connectionFailed(err);
+    throw err;
+  }
   jQexec(body, function(err, window) {
     var $ = window.$;
-    var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
-    new UsersDataManager('.usersdata', function(err, self) {
-      welcome(csrf, self);
-    });
+    if (~$('body blockquote > p').text().indexOf('王老师在更新系统代码')) {
+      connectionFailed();
+      var error = new Error('Error: Failed to visit Eden because Dr. Wang is updating codes.');
+      throw error;
+    } else {
+      var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
+      new UsersDataManager('.usersdata', function(err, self) {
+        if (err) return;
+        else welcome(csrf, self);
+      });
+    }
   });
 });
 

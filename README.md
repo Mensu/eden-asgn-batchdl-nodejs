@@ -5,13 +5,10 @@
 - [``DaddyTrap``](https://github.com/DaddyTrap/eden_clone_codes) who inspired me as well to have a try
 - [``ieb``](https://github.com/iebb/eden-asgn-batchdl-nodejs) who has laid a solid foundation for my later development and from whom this repository is forked
 
-# New Features
- - **auto mode**: fetch your unfinished assignments automatically without inputting your username and password
- - **store your username and password** locally
- - **multiple id input** supported
- - download **standard answer binaries**
- - **polish latest submission output** so that it becomes more convenient to read and utilize  
-     [``byproduct: eden-submission-output-polisher``](https://github.com/Mensu/eden-submission-output-polisher)
+# New
+
+- fix a bug where contents after [Time limit ...] will be wrongly deleted
+- change the label for unfinished assignments ([unfinished] => [todo]) and optional assignments ([optional] => [opt])
 
 # Downloaded Contents
 
@@ -25,16 +22,16 @@
 
 There are some precompiled binaries ( by using ``enclose``)
 
-[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Win32.exe)
+[``Windows-32bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.4-alpha/Downloader-Win32.exe)
 ``19.9 MB``
 
-[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Win64.exe)
+[``Windows-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.4-alpha/Downloader-Win64.exe)
 ``25.2 MB``
 
-[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Mac64)
+[``Mac-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.4-alpha/Downloader-Mac64)
 ``29.5 MB``
 
-[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.3-alpha.1/Downloader-Ubuntu64)
+[``Ubuntu-64bit``](https://github.com/Mensu/eden-asgn-batchdl-nodejs/releases/download/v0.4-alpha/Downloader-Ubuntu64)
 ``31.3 MB``
 
 You only need to execute it
@@ -90,12 +87,12 @@ sudo apt-get install nodejs
 
 # Details
 
-1. When you fetch **unfinished** assignments automatically, the folders of all the assignments **are labelled "[unfinished]"**
-2. When you fetch assignments **by ids**, the folders of the optional assignments **are labelled "[optional]"**
+1. When you fetch **unfinished** assignments automatically, the folders of all the assignments **are labelled "[todo]"**
+2. When you fetch assignments **by ids**, the folders of the optional assignments **are labelled "[opt]"**
 3. If the standard answer is unlocked, the standard answer's codes are downloaded in a **folder named "Standard Answer"**
 4. If the **hard due has passed**, the **latest submission codes**, if any, regardless of its grade, are downloaded
 5. If there are any submissions whose grades are *positive and have yet to reach full marks*, **the  latest one's polished output** is downloaded. Otherwise, no latest submission outputs are generated
-6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win64 and Linux64**]
+6. Auto mode = [login with the **first** account stored locally] + [fetch **unfinished** assignments] + [download standard answer binaries **on Win32/64 and Linux64**]
 7. If you choose to store usernames and passwords locally, there is generated a file **.usersdata**, which stores usernames and passwords in json
   1. username and password will be asked whether to store when they are used to login successfully
   2. If the username and password combination stored locally is wrong, it will get removed

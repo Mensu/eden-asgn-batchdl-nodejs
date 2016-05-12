@@ -1,6 +1,6 @@
 var windows32 = false;
 var windows = false;
-var ByEncloseJS = true;
+var ByEncloseJS = false;
 
 var sanitize = require('sanitize-filename');
 var request = require('request');

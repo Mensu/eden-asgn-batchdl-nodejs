@@ -1,6 +1,7 @@
 var windows32 = false;
 var windows = false;
 var ByEncloseJS = false;
+var chinese = false;
 
 var sanitize = require('sanitize-filename');
 var request = require('request');
@@ -12,13 +13,15 @@ var path = require('path');
 var fs = require('fs');
 var j = request.jar();
 var getDirName = path.dirname;
-var edenRoot = 'http://eden.sysu.edu.cn';
+var edenRoot = 'http://zion.sysu.edu.cn';
 var edenPrefix = edenRoot + '/m/';
+var usersdataFilename = '.usersdata';
 var request = request.defaults({
   jar: j
 });
 var globalAutomode = false;
 var globalDownloadBinaries = false;
+
 
 function writeFile(path, contents, callback) {
   mkdirp(getDirName(path), function(err) {
@@ -46,24 +49,34 @@ function jQexec(body, cb) {
 }
 
 function connectionFailed() {
-  console.log("\nConnectionError: Failed to connect to Eden, please try again later:(");
-  console.log("  *** Lack of access to internet or Dr. Wang being updating codes \
+  if (chinese) {
+    console.log("\n连接错误: 无法连接到Eden，请稍后再试:(");
+    console.log("  *** 这可能是因为您的电脑没有连网，或者王老师正在更新代码。");
+  } else {
+    console.log("\nConnectionError: Failed to connect to Eden, please try again later:(");
+    console.log("  *** Lack of access to internet or Dr. Wang being updating codes \
 may cause this problem. ");
+  }
 }
 
 function encloseJSWarning() {
-  if (ByEncloseJS) console.log('\n*** WARNING: the executable is compiled by EncloseJS Evaluation version with \
+  if (ByEncloseJS) {
+    if (chinese) console.log('\n*** 警告: 该可执行文件由EncloseJS免费版编译，在进程工作时间\
+方面有较大的限制。因此，若一次性下载过多作业，有些作业的代码和标程二进制文件很有可能无法完整下载。\
+此时我们建议您下载该程序的源代码并在nodejs上运行。您可以查看Github上的README文件来获取更多信息。\n');
+    else console.log('\n*** WARNING: the executable is compiled by EncloseJS Evaluation version with \
 considerable limitations on process working time. Some assignments and binaries are likely to \
 fail to be downloaded completely due to these limitations if too many assignments are required \
 at a time. In this case we suggest you download the source code and run it on nodejs. \
 You might want to check out the README file on our GitHub (https://github.com/Men\
 su/eden-asgn-batchdl-nodejs) for more information.\n');
+  }
 }
 
 function downloadFile(url, dest, callback) {
   mkdirp(getDirName(dest), function(err) {
     if (err) {
-      if (callback) return console.log('', err.message), callback(err);
+      if (callback) return console.log('', err.message, '\n  ... Error occurred when downloading ' + dest), callback(err);
       else throw err;
     }
     var file = fs.createWriteStream(dest);
@@ -71,12 +84,12 @@ function downloadFile(url, dest, callback) {
     // verify response code
     sendReq.on('response', function(response) {
       if (response.statusCode !== 200)
-        return console.log('', 'Response status was ' + response.statusCode), callback(new Error('Bad Response status' + response.statusCode));
+        return console.log('', 'Response status was ' + response.statusCode, '\n  ... Error occurred when downloading ' + dest), callback(new Error('Bad Response status' + response.statusCode));
     });
     // check for request errors
     sendReq.on('error', function(err) {
       fs.unlink(dest);
-      if (callback) return console.log('', err.message), callback(err);
+      if (callback) return console.log('', err.message, '\n  ... Error occurred when downloading ' + dest), callback(err);
     });
     sendReq.pipe(file);
     file.on('finish', function() {
@@ -84,7 +97,7 @@ function downloadFile(url, dest, callback) {
     });
     file.on('error', function(err) {  // Handle errors
       fs.unlink(dest); // Delete the file async.
-      if (callback) return console.log('', err.message), callback(err);
+      if (callback) return console.log('', err.message, '\n  ... Error occurred when downloading ' + dest), callback(err);
     });
   });
 };
@@ -587,9 +600,9 @@ In this way we obtain as a result:
 }
 
 
-function FetchOne(Id, finished, Title, username) {
-  if (Title.length) console.log("Fetching unfinished assignment", Id, Title, "....");
-  else console.log("Fetching assignment", Id, "....");
+function FetchOne(Id, finished, Title, username, idArray, callback) {
+  if (Title.length) console.log(((chinese) ? "正在获取未完成的 Assignment" : "Fetching unfinished assignment"), Id, Title, "....");
+  else console.log(((chinese) ? "正在获取 Assignment" : "Fetching assignment"), Id, "....");
   request.get(edenPrefix + 'ass/' + Id, function(e, r, body) {
     if (e) {
       connectionFailed(e);
@@ -624,10 +637,18 @@ function FetchOne(Id, finished, Title, username) {
         // case 4: there are no code files in this page. just return
         // it would be better to encapsulate this section as an exception
       if (blockTag.length == 0) {
-        console.log("\nError: No code files exist. (the assignment id is " + Id + ")");
-        console.log("  *** It is suggested that you check out whether the assignment actually exists, \
+        if (chinese) {
+          console.log("\n错误：页面上没有代码文件 (出错的id为" + Id + ")");
+          console.log("  *** 建议您亲自登录Eden查看该作业是否真实存在、正在改分、或者被判抄袭。");
+          if ($('#main font').text().indexOf('plagiarism')) console.log('  *** 提示：您的这次作业似乎被判了抄袭。');
+          console.log('  ... 下载Assignment ' + Id + ' 时出错。');
+        } else {
+          console.log("\nError: No code files exist. (the assignment id is " + Id + ")");
+          console.log("  *** It is suggested that you check out whether the assignment actually exists, \
 is being graded, or is in plagiarism pending.");
-        console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
+          if ($('#main font').text().indexOf('plagiarism')) console.log('  *** Hint: Your assignment seems to be in plagiarism pending.');
+          console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
+        }
         return;
       }
 
@@ -660,8 +681,14 @@ is being graded, or is in plagiarism pending.");
                 // download binaries
               downloadStandardAnswerBinaries(Id, savePath, function(err) {
                 if (err) error = err;
-                if (error) console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
-                else console.log('  ... Assignment ' + Id + ' downloaded successfully!');
+                if (chinese) {
+                  if (error) console.log('  ... 下载 Assignment ' + Id + ' 时出错。');
+                  else console.log('  ... 成功下载 Assignment ' + Id + '!');
+                } else {
+                  if (error) console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
+                  else console.log('  ... Assignment ' + Id + ' downloaded successfully!');
+                }
+                if (callback) callback(idArray);
               });
             });
           });
@@ -677,7 +704,19 @@ is being graded, or is in plagiarism pending.");
 }
 
 
-function fetchUnfinished(username) {
+function fetchAsgn(idArray) {
+  var task = null;
+  for (var i = 0; i < 2; ++i) {
+    if (idArray.length == 0) return;
+    task = idArray.pop();
+    FetchOne(task[0], task[1], task[2], task[3], idArray);
+  }
+  if (idArray.length == 0) return;
+  task = idArray.pop();
+  FetchOne(task[0], task[1], task[2], task[3], idArray, fetchAsgn);
+}
+
+function fetchUnfinished(username, idArray, callback) {
   request.get(edenPrefix + 'ass/', function(e, r, body) {
     if (e) {
       connectionFailed(e);
@@ -686,16 +725,18 @@ function fetchUnfinished(username) {
     jQexec(body, function(err, window) {
         var $ = window.$;
         if ($('.item-ass a').length > 6) encloseJSWarning();
-        $('.item-ass a').each(function() {
+        $('.item-ass a').each(function(index) {
             // sanitize id and title
           Id = $(this).attr('href').replace(/[^0-9]/g, '');
           Title = $(this).text().replace(/^\s+/, '').replace(/\s+$/, '');
-          FetchOne(Id, false, Title, username);
+          if (idArray && callback) {
+            idArray.push([Id, false, Title, username]);
+            if (index == $('.item-ass a').length - 1) callback(idArray);
+          } else FetchOne(Id, false, Title, username);
         });
     });
   });
 }
-
 
 function UsersDataManager(filename, callback) {
     // this => *this && public
@@ -717,8 +758,24 @@ function UsersDataManager(filename, callback) {
             else throw err;
           } else {
               // create a usersDataManager object from the file
-            self.data = JSON.parse(rawData);
-            self.total = self.data.users.length;
+            try {  
+              self.data = JSON.parse(rawData);
+              self.total = 0;
+              for (i in self.data.users) 
+                if (self.data.users[i].username.length && self.data.users[i].password.length) ++self.total;
+            } catch (e) {
+              console.log('', e.name + ": " + e.message);
+              if (chinese) console.log('  *** 错误：' + filename + ' 文件似乎被修改过，无法被解释器识别了。\
+原来的 ' + filename + ' 文件将会在下一次储存用户名密码的时候被覆盖。');
+              else console.log('  *** Error: It seems that data stored in ' + filename + ' have \
+been modified and could not be recognized any more. \
+The orginal ' + filename + ' file will get overwritten when \
+new username and password patterns are allowed to stored.');
+              self.data = {"users": []};
+              self.total = self.data.users.length;
+              if (callback) return callback(null);
+              else throw e;
+            }
             if (callback) callback(null);
           }
         });
@@ -758,7 +815,14 @@ function UsersDataManager(filename, callback) {
       = this.data.users[this.total - 1];
     this.data.users[this.total - 1] = {"username": "", "password": ""};
     --(this.total);
-    if (callback) callback();
+    this.writeDataTo(usersdataFilename, function(err) {
+      if (err) {
+        if (chinese) console.log('', err.message, '\n保存失败\n');
+        else console.log('', err.message, '\nFailed to store\n');
+        if (callback) return callback();
+      }
+      if (callback) return callback();
+    });
   }
   this.readDataFrom(filename, function(err) {
       // call UsersDataManager's callback
@@ -769,16 +833,26 @@ function UsersDataManager(filename, callback) {
 function getAssignmentsId(username) {
   if (globalAutomode) {
     fetched = true;
-    console.log('Ready to fetch unfinished assignments.');
-    return fetchUnfinished(username);
+    //if (chinese) console.log('准备下载未完成的Assignment。');
+    //else console.log('Ready to fetch unfinished assignments.');
+    return fetchUnfinished(username, new Array(), fetchAsgn);
   }
   prompt.start();
-  console.log("Please input the assignment id");
-  console.log('or [simply press Enter] to fetch unfinished assignments');
-  console.log('  *** Note: a valid assignment id is a [four-digit] number like 6910');
-  console.log('  *** multiple ids are allowed like 6910 6911 6912, with ids separated by spaces');
-  console.log('  *** you may also input a "u" as an id to fetch unfinished assignments,');
-  console.log('  *** like 6910 u 2035  => 6910, unfinished ones and 2035 will be fetched');
+  if (chinese) {
+    console.log("请输入 Assignment id");
+    console.log('或者[敲下回车]下载未完成的 Assignment');
+    console.log('  *** 注意：id应该是一个四位数，像 6910');
+    console.log('  *** 允许一次输入多个id，像 6910 6911 6912，用空格将id隔开');
+    console.log('  *** 您也可以输入一个 "u" 代表未完成的 Assignment，');
+    console.log('  *** 像 6910 u 2035  => 下载 6910、未完成的以及2035');
+  } else {
+    console.log("Please input the assignment id");
+    console.log('or [simply press Enter] to fetch unfinished assignments');
+    console.log('  *** Note: a valid assignment id is a [four-digit] number like 6910');
+    console.log('  *** multiple ids are allowed like 6910 6911 6912, with ids separated by spaces');
+    console.log('  *** you may also input a "u" as an id to fetch unfinished assignments,');
+    console.log('  *** like 6910 u 2035  => 6910, unfinished ones and 2035 will be fetched');
+  }
   prompt.get([{
     name: 'id',
     type: 'string',
@@ -787,39 +861,50 @@ function getAssignmentsId(username) {
     if (err) throw err;
     var fetched = false;  // flag for unfinished assignments
     var rawId = result.id, countValidId = 0;
+    var idArray = new Array();
       // simply press Enter => fetch unfinished assignments
     if (rawId.length == 1 && rawId[0] == '') {
       fetched = true;
-      console.log('Ready to fetch unfinished assignments.');
-      return fetchUnfinished(username);
+      //if (chinese) console.log('准备下载未完成的 Assignment。');
+      //else console.log('Ready to fetch unfinished assignments.');
+      if (ByEncloseJS) return fetchUnfinished(username, idArray, fetchAsgn);
+      else return fetchUnfinished(username);
     }
     for (i in rawId) {
       var oneId = rawId[i];
       if (!fetched && oneId.match(/^u$/)) {
           // id is u => fetch unfinished assignments
         fetched = true;
-        console.log('Ready to fetch unfinished assignments.');
-        fetchUnfinished(username);
+        //if (chinese) console.log('准备下载未完成的 Assignment。');
+        //else console.log('Ready to fetch unfinished assignments.');
+        if (ByEncloseJS) fetchUnfinished(username, idArray, fetchAsgn);
+        else fetchUnfinished(username);
       } else if (oneId.match(/^(\d){4}$/)) {
           // id is valid => fetch the desired assignment
         ++countValidId;
-        if (countValidId == 4) encloseJSWarning();
-        console.log('Ready to fetch the desired assignment (id = ' + oneId + ')');
-        FetchOne(oneId, true, "", username);
+        if (countValidId == 5) encloseJSWarning();
+        //if (chinese) console.log('准备下载指定的 Assignment (id = ' + oneId + ')');
+        //else console.log('Ready to fetch the desired assignment (id = ' + oneId + ')');
+        //FetchOne(oneId, true, "", username);
+        if (ByEncloseJS) idArray.push([oneId, true, "", username]);
+        else FetchOne(oneId, true, "", username);
       } else if (oneId != '') {  // else => ignore
-        console.log('invalid id "' + oneId + '" ignored');
+        if (chinese) console.log('忽略非法id "' + oneId + '"');
+        else console.log('invalid id "' + oneId + '" ignored');
       }
     }
       // no valid id input
     if (countValidId == 0 && !fetched) {
-      console.log('Bad input! Please try again...');
+      if (chinese) console.log('无效输入！请重试...');
+      else console.log('Bad input! Please try again...');
       getAssignmentsId(username);
-    }
+    } else if (ByEncloseJS) fetchAsgn(idArray);
   });
 }
 
 function loginEden(csrf, fromData, username, password, usersDataManager) {
-  console.log("Logging in....");
+  if (chinese) console.log('正在登录....');
+  else console.log("Logging in....");
   request.post({
     url: edenPrefix + 'login/',
     form: {
@@ -838,7 +923,8 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
         if (~errorText.indexOf('a correct username and password')) {
           incorrectCombi = true;
         }
-        console.log(errorText, "\nLogin failed, please retry :(");
+        if (chinese) console.log(errorText, "\n登录失败，请重试 :(");
+        else console.log(errorText, "\nLogin failed, please retry :(");
         if (fromData && incorrectCombi) {
             // combination from usersDataManager is wrong => remove the wrong record
           usersDataManager.removeAccountByUsername(username, function() {
@@ -847,7 +933,8 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
           });
         } else return chooseAccount(csrf, usersDataManager);  // directly choose again
       } else {
-        console.log("Logged in with username", username);
+        if (chinese) console.log("用户", username, "登录成功");
+        else console.log("Logged in with username", username);
         if (fromData) {
             // login with the combination from usersDataManager => get Id directly
           getAssignmentsId(username);
@@ -855,7 +942,8 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
             // login with the user-input combination
             //   => allow user to store the new combination
           prompt.start();
-          console.log('Would you like to store the username and password locally?');
+          if (chinese) console.log('是否要在本地保存用户名和密码？');
+          else console.log('Would you like to store the username and password locally?');
           prompt.get([{
             name: 'store',
             description: '[y/n]'
@@ -864,17 +952,20 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
             if (result.store == 'y' || result.store == 'Y' || result.store == 'yes'
                 || result.store == 'Yes' || result.store == 'YES') {  // yes
               usersDataManager.addAccount(username, password);
-              usersDataManager.writeDataTo('.usersdata', function(err) {
+              usersDataManager.writeDataTo(usersdataFilename, function(err) {
                 if (err) {
-                  console.log('', err.message, '\nFailed to store\n');
-                  getAssignmentsId(username);
+                  if (chinese) console.log('', err.message, '\n保存失败\n');
+                  else console.log('', err.message, '\nFailed to store\n');
+                  return getAssignmentsId(username);
                 }
-                console.log('... successfully stored\n');
-                getAssignmentsId(username);
+                if (chinese) console.log('... 保存成功\n');
+                else console.log('... successfully stored\n');
+                return getAssignmentsId(username);
               });
             } else {  // not to store
-              console.log('Not stored\n');
-              getAssignmentsId(username);
+              if (chinese) console.log('未保存\n');
+              else console.log('Not stored\n');
+              return getAssignmentsId(username);
             }
           });
         }
@@ -888,8 +979,12 @@ function getUsernameAndPassword(csrf, chosenUser, usersDataManager) {
   if (chosenUser.password) {  // username and password from the chosen account
     loginEden(csrf, true, chosenUser.username, chosenUser.password, usersDataManager);
   } else {
-    prompt.get(['username', {
+    prompt.get([{
+      name: 'username',
+      description: (chinese) ? '用户名' : 'username'
+    }, {
       name: 'password',
+      description: ((chinese) ? '密码' : 'password'),
       hidden: true,
       replace: '*',
       required: true
@@ -906,12 +1001,18 @@ function chooseAccount(csrf, usersDataManager) {
   if (total == 0) {  // no users data stored locally => obtain username and password from user
     getUsernameAndPassword(csrf, {'username': '', 'password': ''}, usersDataManager);
   } else {
-    console.log("Please choose an account listed below to login by [inputting its index],");
-    console.log("or [simply press Enter] so as to input username and password by yourself\n");
+    if (chinese) {
+      console.log("请从下列的账号列表中，选择一个账号并输入其序号登录");
+      console.log("或者[敲下回车]手动输入用户名和密码\n");
+    } else {
+      console.log("Please choose an account listed below to login by [inputting its index],");
+      console.log("or [simply press Enter] so as to input username and password by yourself\n");
+    }
     usersDataManager.listUsernames();
     prompt.start();
     prompt.get([{
       name: 'choice',
+      description: (chinese) ? '序号' : 'choice',
       type: 'string',
     }], function(err, result) {
       if (err) throw err;
@@ -922,7 +1023,8 @@ function chooseAccount(csrf, usersDataManager) {
           // valid index => obtain username and password from the chosen account
         return getUsernameAndPassword(csrf, usersDataManager.getAccountByListedIndex(parseInt(result.choice)), usersDataManager);
       } else {  // invalid index => choose again
-        console.log("Error: Invalid index detected. Please try again with a valid index.");
+        if (chinese) console.log("错误：检测到非法的序号。请重新输入一个正常的序号。");
+        else console.log("Error: Invalid index detected. Please try again with a valid index.");
         return chooseAccount(csrf, usersDataManager);
       }
     });
@@ -932,10 +1034,16 @@ function chooseAccount(csrf, usersDataManager) {
 
 function chooseAutomode(callback) {
   prompt.start();
-  console.log('Would you like to access auto mode? [simply press Enter] to access!');
-  console.log('  *** In auto mode, we will use the first account stored locally to \
+  if (chinese) {
+    console.log('您打算进入自动模式吗？只需[敲下回车]即可进入！');
+    console.log('  *** 在自动模式下，我们将使用本地储存的第一个账号登录Eden，下载未完成的Assignment以及能在Windows '
++ ((windows32) ? '32' : '64') + '位和Linux 64位下运行的二进制文件。');
+  } else {
+    console.log('Would you like to access auto mode? [simply press Enter] to access!');
+    console.log('  *** In auto mode, we will use the first account stored locally to \
 fetch the unfinished assignments and download binaries executable on Windows '
 + ((windows32) ? '32' : '64') + 'bit and Linux 64bit');
+  }
   prompt.get([{
     name: 'automode',
     description: '[y/n]'
@@ -943,10 +1051,12 @@ fetch the unfinished assignments and download binaries executable on Windows '
     if (err) throw err;
     if (result.automode == '' || result.automode == 'y' || result.automode == 'Y'
       || result.automode == 'yes' || result.automode == 'Yes' || result.automode == 'YES') {
-      console.log('Auto mode started!');
+      if (chinese) console.log('开启自动模式！');
+      else console.log('Auto mode started!');
       return callback(undefined, true);
   } else {
-    console.log('Access usual mode.');
+    if (chinese) console.log('进入普通模式。');
+    else console.log('Access usual mode.');
     return callback(undefined, false);
   }
   });
@@ -955,9 +1065,14 @@ fetch the unfinished assignments and download binaries executable on Windows '
 
 function chooseDownloadBinaries(callback) {
   prompt.start();
-  console.log('Would you like to download standard answer binaries?');
-  if (ByEncloseJS) console.log('  *** WARNING: this feature is likely to fail to \
+  if (chinese) {
+    console.log('您打算下载标程的二进制文件吗？');
+    if (ByEncloseJS) console.log('  *** 警告：如果一次下载太多作业，下载可能会失败。');
+  } else {
+    console.log('Would you like to download standard answer binaries?');
+    if (ByEncloseJS) console.log('  *** WARNING: this feature is likely to fail to \
 work properly on precompiled binaries if there are too many assignments to download.');
+  }
   prompt.get([{
     name: 'binaries',
     description: '[y/n]'
@@ -965,10 +1080,12 @@ work properly on precompiled binaries if there are too many assignments to downl
     if (err) throw err;
     if (result.binaries == 'y' || result.binaries == 'Y' || result.binaries == 'yes'
         || result.binaries == 'Yes' || result.binaries == 'YES') {
-      console.log('We will try our best to download binaries.');
+      if (chinese) console.log('我们将尽量下载标程的二进制文件。');
+      else console.log('We will try our best to download binaries.');
       return callback(undefined, true);
     } else {
-      console.log('Binaries will not get downloaded.');
+      if (chinese) console.log('标程的二进制文件不会被下载。');
+      else console.log('Binaries will not get downloaded.');
       return callback(undefined, false);
     }
   });
@@ -997,7 +1114,8 @@ function options(csrf, usersDataManager) {
 }
 
 function welcome(csrf, usersDataManager) {
-  console.log("Welcome!");
+  if (chinese) console.log('欢迎！');
+  else console.log("Welcome!");
     // allow the user to choose an account stored locally, if any
   options(csrf, usersDataManager);
 }
@@ -1010,16 +1128,20 @@ request(edenPrefix + 'login/', function(err, response, body) {
   jQexec(body, function(err, window) {
     var $ = window.$;
     if (~$('body blockquote > p').text().indexOf('王老师在更新系统代码')) {
-      connectionFailed();
-      var error = new Error('Error: Failed to visit Eden because Dr. Wang is updating codes.');
-      throw error;
-    } else {
-      var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
-      new UsersDataManager('.usersdata', function(err, self) {
-        if (err) return;
-        else welcome(csrf, self);
-      });
+      // connectionFailed();
+      if (chinese) err = new Error('王老师正在更新代码，故无法连接到Eden。');
+      else err = new Error('Failed to visit Eden because Dr. Wang is updating codes.');
+    } else if (~$('body h1').text().indexOf('Server Error')) {
+      connectionFailed(err);
+      if (chinese) err = new Error('内部服务器错误，故无法连接到Eden。');
+      else err = new Error('Failed to visit Eden because of internal server error.');
     }
+    if (err) throw err;
+    var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
+    new UsersDataManager(usersdataFilename, function(err, self) {
+      if (err) return;
+      else welcome(csrf, self);
+    });
   });
 });
 

@@ -19,6 +19,7 @@ var usersdataFilename = '.usersdata';
 var request = request.defaults({
   jar: j
 });
+var sprintf = require('sprintf-js').sprintf;
 var globalAutomode = false;
 var globalDownloadBinaries = false;
 
@@ -26,13 +27,15 @@ var globalDownloadBinaries = false;
 function writeFile(path, contents, callback) {
   mkdirp(getDirName(path), function(err) {
     if (err) {
-      if (callback) return console.log('', err.message), callback(err);
+      console.log('\nError:', err.message);
+      if (callback) return callback(err);
       else throw err;
     }
     if (windows) contents = contents.replace(/\n/g, '\r\n');
     fs.writeFile(path, contents, function(err) {
       if (err) {
-        if (callback) return console.log('', err.message), callback(err);
+        console.log('\nError:', err.message);
+        if (callback) return callback(err);
         else throw err;
       }
       else if (callback) return callback(null);
@@ -57,6 +60,19 @@ function connectionFailed() {
     console.log("  *** Lack of access to internet or Dr. Wang being updating codes \
 may cause this problem. ");
   }
+}
+
+function informServerError($) {
+  var err = null;
+  if (~$('body blockquote > p').text().indexOf('王老师在更新系统代码')) {
+    if (chinese) err = new Error('王老师正在更新代码，故无法连接到Eden。');
+    else err = new Error('Failed to visit Eden because Dr. Wang is updating codes.');
+  } else if (~$('body h1').text().indexOf('Server Error')) {
+    connectionFailed(err);
+    if (chinese) err = new Error('内部服务器错误，故无法连接到Eden。');
+    else err = new Error('Failed to visit Eden because of internal server error.');
+  }
+  if (err) throw err;
 }
 
 function encloseJSWarning() {
@@ -166,15 +182,15 @@ function fetchDHL($, hardDue, savePath, callback) {
       // index = 2, if hard due hasn't passed
       // index = 5, if hard due has passed
     if (index == (2 + 3 * hardDue)) {
-      fetchLatestSubmissionOutput($, $(this), hardDue, savePath, function(err) {
-        if (callback) callback(err);
+      fetchLatestSubmissionOutput($, $(this), hardDue, savePath, function(err, hasOutput) {
+        if (callback) callback(err, hasOutput);
       });
         // break the loop
       return false;
     }
   });
     // if there is no latest submission, just call callback
-  if ((2 + 3 * hardDue) >= length && callback) return callback(error);
+  if ((2 + 3 * hardDue) >= length && callback) return callback(error, true);
 }
 
 
@@ -187,6 +203,7 @@ function fetchCodeFromSubmissionRecord(url, savePath, subfolder, Id, callback) {
     }
     jQexec(body, function(err, window) {
         var $ = window.$;
+        informServerError($);
         fetchCodeFromCurrentPage(false, $, '#tab-nondiv-container .tab a', savePath,
                                   '', function(err) {
           if (callback) return callback(err);
@@ -251,9 +268,9 @@ function fetchLatestSubmissionOutput($, self, hardDue, savePath, callback) {
       // if output is not empty, save
     if (output.length) writeFile(savePath + latestSubmissionOutputFilename,
                                   output, function(err) {
-        if (callback) return callback(err);
+        if (callback) return callback(err, true);
       });
-    else if (callback) return callback(null);
+    else if (callback) return callback(null, false);
   } else if (latestSubmissionURL.length > 1) {
       // case 2: visit the corresponding page
     request.get(latestSubmissionURL, function(e, r, body) {
@@ -263,17 +280,18 @@ function fetchLatestSubmissionOutput($, self, hardDue, savePath, callback) {
       }
       jQexec(body, function(err, window) {
           var $ = window.$;
+          informServerError($);
             // make it convenient for the user to get test input
           output = polishSubmissionOutput($('#submission-content .panel').text());
             // if output is not empty, save
           if (output.length) writeFile(savePath + latestSubmissionOutputFilename,
                                         output, function(err) {
-              if (callback) return callback(err);
+              if (callback) return callback(err, true);
             });
-          else if (callback) return callback(null);
+          else if (callback) return callback(null, false);
         });
     });
-  } else if (callback) return callback(null);  // case 3: do nothing
+  } else if (callback) return callback(null, true);  // case 3: do nothing
 }
 
 
@@ -351,7 +369,7 @@ function polishSubmissionOutput(rawData) {
       var nonContent = isBorder || isYSOutput;
                           // if the line is output content => generate linenum for it
                           // else => no linenum generated
-      var linenumString = ((nonContent) ? '' : ('00' + (linenum++)).slice(-3));
+      var linenumString = ((nonContent) ? '' : sprintf('%03d', linenum++));
       var start = ((nonContent) ? 0 : 3);
                         // if the line is non-content => start from index #0
                         // else the line must contain output content => start from index #3
@@ -362,116 +380,6 @@ function polishSubmissionOutput(rawData) {
       if (!borderToEncounter) toAddLinenum = false;
       continue;
     }
-
-/* --------- demo ----------
-first we explain how to get formatted linenum with ('00' + (linenum++)).slice(-3)
-It's a pity that I failed to find a printf-like function in nodejs that supports %0*d
-so I found a workaround:
-  if linenum is a one-digit number, say 5, ('00' + (linenum++)) would be '005'
-~~~~~~~~~~~~~~~
-(-3)(-2)(-1)
- 0   0   5
-~~~~~~~~~~~~~~~
-   *** we start from index #-3 and obtain '005' as a result
-
-
-  if linenum is a two-digit number, say 43, ('00' + (linenum++)) would be '0043'
-~~~~~~~~~~~~~~~
-(-4)(-3)(-2)(-1)
- 0   0   4   3
-~~~~~~~~~~~~~~~
-   *** we start from index #-3 and obtain '043' as a result
-
-
-Now we show how we cope with the data below:
-0123456
-     Your program's stdout output:
-0123456
-    +---------------------------------------------------------------------
-0123456
-    |{}
-0123456
-    |is empty set: 0
-0123456
-    |append: 1
-0123456
-    |append: 1
-0123456
-    |{-3202, 3054}
-0123456
-    |append: 0
-0123456
-    |{-3202, 3054}
-0123456
-    |is empty set: 0
-0123456
-    |remove: 1
-0123456
-    |{3054, 4001, 4794, 5985}
-0123456
-    |remove: 0
-0123456
-    |{3054, 4001, 4794, 5985}
-0123456
-    |
-0123456
-    +---------------------------------------------------------------------
-0123456
-
-
-Case 1: If the line is non-content (Your output, Standard output, or borders +----...)
-~~~~~~~~~~~~~~~~~~~~
-0123456
-     Your program's stdout output:
-0123456
-~~~~~~~~~~~~~~~~~~~~
-
-   *** we keep the line intact by starting from index #0 and obtain before appending '\n'
-   0123456
->>>     Your program's stdout output:<<<
-   0123456
-
-=>
-     Your program's stdout output:\n
-
-
-Case 2: If the line contains output data (the linenum for the line below is 2)
-~~~~~~~~~~~~~~~~~~~~
-0123456
-    |is empty set: 0
-0123456
-~~~~~~~~~~~~~~~~~~~~
-
-   *** we start from index #3 and obtain before prefixing '002' and appending '\n'
-0123456
->>> |is empty set: 0<<<
-0123456
-
-=>'002' + ' |is empty set: 0' + '\n'
-=>
-002 |is empty set: 0\n
-
-
-In this way we obtain as a result:
-     Your program's stdout output:
-    +---------------------------------------------------------------------
-001 |{}
-002 |is empty set: 0
-003 |append: 1
-004 |append: 1
-005 |{-3202, 3054}
-006 |append: 0
-007 |{-3202, 3054}
-008 |is empty set: 0
-009 |remove: 1
-010 |{3054, 4001, 4794, 5985}
-011 |remove: 0
-012 |{3054, 4001, 4794, 5985}
-013 |
-    +---------------------------------------------------------------------
-
-
-*/
 
       // if the line starts with '     [Test input]'    (=> is actually [Test input])
       //    and we are out of input polish mode
@@ -495,87 +403,18 @@ In this way we obtain as a result:
       if (!borderToEncounter) toPolishInput = false;
       continue;
     }
-/* -------- demo ---------
-0123456
-     [Test input]
-0123456
-    +---------------------------------------------------------------------
-0123456
-    |-32131 980 23131 23131 231312
-0123456
-    |-32 980 28981 89331 3892
-0123456
-    +---------------------------------------------------------------------
-0123456
-
-
-Case 1: If the line is [Test input]:
-~~~~~~~~~~~~~~~~~~~~
-0123456
-     [Test input]
-0123456
-~~~~~~~~~~~~~~~~~~~~
-
-   *** we start from index #4 and obtain ' [Test input]' before appending '\n'
-0123456
->>>> [Test input]<<<
-0123456
-
-=>
- [Test input]\n
-
-
-Case 2: If the line is a border:
-~~~~~~~~~~~~~~~~~~~~
-0123456
-    +---------------------------------------------------------------------
-0123456
-~~~~~~~~~~~~~~~~~~~~
-
-   *** we start from index #4 and obtain '+---------...' before appending '\n'
-0123456
->>>>+---------------------------------------------------------------------<<<
-0123456
-
-=>
-+---------------------------------------------------------------------\n
-
-
-Case 3: If the line contains input data:
-~~~~~~~~~~~~~~~~~~~~
-0123456
-    |-32131 980 23131 23131 231312
-0123456
-~~~~~~~~~~~~~~~~~~~~
-
-   *** we start from index #5 and obtain input data before appending '\n'
-0123456
->>>>>-32131 980 23131 23131 231312<<<
-0123456
-
-=>
--32131 980 23131 23131 231312\n
-
-
-In this way we obtain as a result:
- [Test input]
-+---------------------------------------------------------------------
--32131 980 23131 23131 231312
--32 980 28981 89331 3892
-+---------------------------------------------------------------------
-
-*/
     
     if (!(toPolishInput && toAddLinenum)) polishedData += (splitData[i] + '\n');
     if (toJudgeFullmark) {
       if (!splitData[i].match(/^Pass/)) fullmark = false;
       toJudgeFullmark = false;
     }
+    if (splitData[i].match(/^Unexpected error/)) fullmark = false;
     if (beforeMemory) {
       if (!afterExecRandom) {
         if (beforeStandard) {
           if (beforeGoogleStyle) {
-            if (splitData[i].match(/: check_style]/)) {
+            if (splitData[i].match(/: check_style\]/)) {
               beforeGoogleStyle = false;
               if (fullmark) toJudgeFullmark = true;
             }
@@ -609,9 +448,11 @@ function FetchOne(Id, finished, Title, username, idArray, callback) {
       throw e;
     }
     jQexec(body, function(err, window) {
-      var $ = window.$, Title = $('.ass h1').first().text().replace(/^\s+/, '').replace(/\s+$/, '');
+      var $ = window.$;
+      informServerError($);
+      var Title = $('.ass h1').first().text().replace(/^\s+/, '').replace(/\s+$/, '');
       var folder = "", devFile = "", isCpp = 0, i = 0;
-
+      
     /* ---- the code below consists of two parts: [set flags], [get codes] ---- */
 
         /* ---- Here we begin to set flags before fetching codes ---- */
@@ -640,13 +481,13 @@ function FetchOne(Id, finished, Title, username, idArray, callback) {
         if (chinese) {
           console.log("\n错误：页面上没有代码文件 (出错的id为" + Id + ")");
           console.log("  *** 建议您亲自登录Eden查看该作业是否真实存在、正在改分、或者被判抄袭。");
-          if ($('#main font').text().indexOf('plagiarism')) console.log('  *** 提示：您的这次作业似乎被判了抄袭。');
-          console.log('  ... 下载Assignment ' + Id + ' 时出错。');
+          if (~$('#main font').text().indexOf('plagiarism')) console.log('  *** 提示：您的这次作业似乎被判了抄袭。');
+          console.log('  ... 下载 Assignment ' + Id + ' 时出错。');
         } else {
           console.log("\nError: No code files exist. (the assignment id is " + Id + ")");
           console.log("  *** It is suggested that you check out whether the assignment actually exists, \
 is being graded, or is in plagiarism pending.");
-          if ($('#main font').text().indexOf('plagiarism')) console.log('  *** Hint: Your assignment seems to be in plagiarism pending.');
+          if (~$('#main font').text().indexOf('plagiarism')) console.log('  *** Hint: Your assignment seems to be in plagiarism pending.');
           console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
         }
         return;
@@ -666,14 +507,18 @@ is being graded, or is in plagiarism pending.");
 
       var error = null;
         /* ---- Here we begin to fetch codes ---- */
-        // case 1, 2, 3: deal with the first "block"
-      fetchCodeFromCurrentPage(editable, $, '#tab-nondiv-container .tab a', savePath, subfolder, function(err) {
+        // deal with Description, Hint and Latest Submission Output
+      fetchDHL($, hardDue, savePath, function(err, hasOutput) {
         if (err) error = err;
-          // case 2: deal with the second block, if any
-        fetchSecondBlock($, savePath, function(err) {
+        if (!hasOutput && !finished) {
+          informFetchResult(error, Id);
+          if (callback) callback(idArray);
+        }
+          // case 1, 2, 3: deal with the first "block"
+        fetchCodeFromCurrentPage(editable, $, '#tab-nondiv-container .tab a', savePath, subfolder, function(err) {
           if (err) error = err;
-            // deal with Description, Hint and Latest Submission Output
-          fetchDHL($, hardDue, savePath, function(err) {
+            // case 2: deal with the second block, if any
+          fetchSecondBlock($, savePath, function(err) {
             if (err) error = err;
               // deal with the latest submission
             fetchLatestSubmissionAfterHardDue($, hardDue, Id, savePath, function(err) {
@@ -681,13 +526,7 @@ is being graded, or is in plagiarism pending.");
                 // download binaries
               downloadStandardAnswerBinaries(Id, savePath, function(err) {
                 if (err) error = err;
-                if (chinese) {
-                  if (error) console.log('  ... 下载 Assignment ' + Id + ' 时出错。');
-                  else console.log('  ... 成功下载 Assignment ' + Id + '!');
-                } else {
-                  if (error) console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
-                  else console.log('  ... Assignment ' + Id + ' downloaded successfully!');
-                }
+                informFetchResult(error, Id);
                 if (callback) callback(idArray);
               });
             });
@@ -703,6 +542,15 @@ is being graded, or is in plagiarism pending.");
   });
 }
 
+function informFetchResult(error, Id) {
+  if (chinese) {
+    if (error) console.log('  ... 下载 Assignment ' + Id + ' 时出错。');
+    else console.log('  ... 成功下载 Assignment ' + Id + '!');
+  } else {
+    if (error) console.log('  ... There occurred some problems when Assignment ' + Id + ' are being downloaded.');
+    else console.log('  ... Assignment ' + Id + ' downloaded successfully!');
+  }
+}
 
 function fetchAsgn(idArray) {
   var task = null;
@@ -724,6 +572,7 @@ function fetchUnfinished(username, idArray, callback) {
     }
     jQexec(body, function(err, window) {
         var $ = window.$;
+        informServerError($);
         if ($('.item-ass a').length > 6) encloseJSWarning();
         $('.item-ass a').each(function(index) {
             // sanitize id and title
@@ -740,38 +589,38 @@ function fetchUnfinished(username, idArray, callback) {
 
 function UsersDataManager(filename, callback) {
     // this => *this && public
-  this.data = {"users": []};
+  this.data = null;
   this.total = 0;
   var self = this;
   UsersDataManager.prototype.readDataFrom = function(filename, callback) {
-    fs.exists(filename, function(exist) {
-      if (!exist) {
+    fs.stat(filename, function(err, stat) {
+      if (err) {
           // create an empty usersDataManager object
-        self.data = {"users": []};
+        self.data = {'users': []};
         self.total = self.data.users.length;
         if (callback) callback(null);
       } else {
           // read the file
         fs.readFile(filename, 'utf-8', function(err, rawData) {
           if (err) {
-            if (callback) console.log('', err.message), callback(err);
+            if (callback) console.log('\nError:', err.code, err.message), callback(err);
             else throw err;
           } else {
               // create a usersDataManager object from the file
             try {  
               self.data = JSON.parse(rawData);
               self.total = 0;
-              for (i in self.data.users) 
+              for (i in self.data.users)
                 if (self.data.users[i].username.length && self.data.users[i].password.length) ++self.total;
             } catch (e) {
-              console.log('', e.name + ": " + e.message);
+              console.log('\nError:', e.code + ": " + e.message);
               if (chinese) console.log('  *** 错误：' + filename + ' 文件似乎被修改过，无法被解释器识别了。\
 原来的 ' + filename + ' 文件将会在下一次储存用户名密码的时候被覆盖。');
               else console.log('  *** Error: It seems that data stored in ' + filename + ' have \
 been modified and could not be recognized any more. \
 The orginal ' + filename + ' file will get overwritten when \
 new username and password patterns are allowed to stored.');
-              self.data = {"users": []};
+              self.data = {'users': []};
               self.total = self.data.users.length;
               if (callback) return callback(null);
               else throw e;
@@ -783,8 +632,9 @@ new username and password patterns are allowed to stored.');
     });
   };
   UsersDataManager.prototype.writeDataTo = function(filename, callback) {
-    fs.writeFile('./' + filename, JSON.stringify(this.data), function() {
-      if (callback) callback(null);
+    writeFile('./' + filename, JSON.stringify(this.data), function(err) {
+      if (callback) callback(err);
+      else throw err;
     });
   };
   UsersDataManager.prototype.listUsernames = function() {
@@ -796,7 +646,7 @@ new username and password patterns are allowed to stored.');
     for (var i = 0; i < this.total; ++i) {
       if (username == this.data.users[i].username) return i;
     }
-      // not found: return a new index which makes it convenient to create new accounts
+      // not found: return a new index which makes it convenient to create a account
     return this.total;
   };
   UsersDataManager.prototype.addAccount = function(username, password) {
@@ -813,12 +663,12 @@ new username and password patterns are allowed to stored.');
   UsersDataManager.prototype.removeAccountByUsername = function(username, callback) {
     this.data.users[this.findAccountByUsername(username)]
       = this.data.users[this.total - 1];
-    this.data.users[this.total - 1] = {"username": "", "password": ""};
+    this.data.users.pop();
     --(this.total);
     this.writeDataTo(usersdataFilename, function(err) {
       if (err) {
-        if (chinese) console.log('', err.message, '\n保存失败\n');
-        else console.log('', err.message, '\nFailed to store\n');
+        if (chinese) console.log('\n保存失败\n');
+        else console.log('\nFailed to store\n');
         if (callback) return callback();
       }
       if (callback) return callback();
@@ -917,6 +767,7 @@ function loginEden(csrf, fromData, username, password, usersDataManager) {
     if (e) connectionFailed(e);
     jQexec(body, function(err, window) {
       var $ = window.$;
+      informServerError($);
       if ($('.errorlist').length) {
         var incorrectCombi = false;  // incorrect username and password combination
         var errorText = $('.errorlist').text();
@@ -1127,16 +978,7 @@ request(edenPrefix + 'login/', function(err, response, body) {
   }
   jQexec(body, function(err, window) {
     var $ = window.$;
-    if (~$('body blockquote > p').text().indexOf('王老师在更新系统代码')) {
-      // connectionFailed();
-      if (chinese) err = new Error('王老师正在更新代码，故无法连接到Eden。');
-      else err = new Error('Failed to visit Eden because Dr. Wang is updating codes.');
-    } else if (~$('body h1').text().indexOf('Server Error')) {
-      connectionFailed(err);
-      if (chinese) err = new Error('内部服务器错误，故无法连接到Eden。');
-      else err = new Error('Failed to visit Eden because of internal server error.');
-    }
-    if (err) throw err;
+    informServerError($);
     var csrf = $($('[name=csrfmiddlewaretoken]')[0]).val();
     new UsersDataManager(usersdataFilename, function(err, self) {
       if (err) return;
@@ -1144,5 +986,3 @@ request(edenPrefix + 'login/', function(err, response, body) {
     });
   });
 });
-
-

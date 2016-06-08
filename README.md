@@ -1,4 +1,4 @@
-#### Please feel free to fork the repository, create new issues as well as make pull requests. Thanks in advance for all your participation!
+#### Please feel free to fork the repository, open new issues as well as make pull requests. Thanks in advance for all your participation!
 
 # Thanks to
 
